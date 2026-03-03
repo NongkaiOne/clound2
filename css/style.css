@@ -1,0 +1,95 @@
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f2f4f8;
+    text-align: center;
+}
+
+.container {
+    padding: 60px 40px;
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #5f6b7a;
+    margin-bottom: 50px;
+}
+
+.card-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.role-card {
+    background: #ffffff;
+    width: 450px;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    text-align: left;
+    transition: 0.3s;
+}
+
+.role-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+.icon-circle {
+    width: 90px;
+    height: 90px;
+    background: #dbe4ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 20px auto;
+}
+
+.role-card h2 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.role-desc {
+    text-align: center;
+    color: #6c7a89;
+    margin-bottom: 25px;
+}
+
+ul {
+    margin-bottom: 30px;
+    color: #5f6b7a;
+}
+
+ul li {
+    margin-bottom: 10px;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #2f62ff, #3a7bff);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.login-btn:hover {
+    opacity: 0.9;
+}
+
+.logo-box img {
+    width: 160px;
+}
