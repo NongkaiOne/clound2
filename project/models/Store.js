@@ -1,6 +1,7 @@
 export default class Store {
     constructor({
         storeID,
+        userID,
         storeName,
         category,
         phone,
@@ -10,6 +11,7 @@ export default class Store {
         positionY
     }) {
         this.storeID = storeID;
+        this.userID = userID;
         this.storeName = storeName;
         this.category = category;
         this.phone = phone;
