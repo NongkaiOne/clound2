@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from project.backend.db import connect_db
+from db import connect_db
 
 map_bp = Blueprint("map", __name__)
 

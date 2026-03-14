@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from project.backend.db import connect_db
+from db import connect_db
 from middleware_auth import require_role
 
 product_bp = Blueprint("product", __name__)

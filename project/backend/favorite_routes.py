@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from project.backend.db import connect_db
+from db import connect_db
 from middleware_auth import verify_token
 
 favorite_bp = Blueprint("favorite", __name__)

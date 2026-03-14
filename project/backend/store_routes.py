@@ -1,18 +1,24 @@
 from flask import Blueprint, request, jsonify
-from project.backend.db import connect_db
+from db import connect_db
 from middleware_auth import require_role
 
 store_bp = Blueprint("store", __name__)
 
+stores = [
+    {"id": 1, "name": "Nike", "x": 100, "y": 200},
+    {"id": 2, "name": "Adidas", "x": 300, "y": 150}
+]
+
 @store_bp.route("/stores", methods=["GET"])
 def get_stores():
 
-    db = connect_db()
-    cursor = db.cursor(dictionary=True)
+    # db = connect_db()
+    # cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM stores")
+    # cursor.execute("SELECT * FROM stores")
 
-    return jsonify(cursor.fetchall())
+    # return jsonify(cursor.fetchall())
+    return jsonify(stores)
 
 
 @store_bp.route("/stores", methods=["POST"])
