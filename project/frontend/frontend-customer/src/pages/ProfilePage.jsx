@@ -1,18 +1,24 @@
-// src/pages/ProfilePage.jsx — หน้า Profile / Login (Image 5)
+// ============================================================
+// src/pages/ProfilePage.jsx — Login / Register / Profile
+// ============================================================
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 import BottomNav from '../components/layout/BottomNav';
+import Icon from '../components/Icons';
+import { T } from '../theme';
 
-function Input({ label, type = 'text', value, onChange, placeholder }) {
+function InputField({ label, type = 'text', value, onChange, placeholder }) {
+  const [focused, setFocused] = useState(false);
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 500 }}>{label}</label>
-      <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={{
-        width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e0e0e0',
-        fontSize: 14, outline: 'none', boxSizing: 'border-box',
-      }} />
+      <label style={{ display: 'block', fontSize: 13, color: '#555', marginBottom: 5, fontWeight: 500 }}>{label}</label>
+      <input
+        type={type} value={value} onChange={onChange} placeholder={placeholder}
+        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+        style={{ width: '100%', padding: '11px 13px', borderRadius: 10, border: `1.5px solid ${focused ? T.header : '#e0e0e0'}`, fontSize: 13, outline: 'none', boxSizing: 'border-box', color: '#333', fontFamily: 'inherit', transition: 'border-color 0.15s' }}
+      />
     </div>
   );
 }
@@ -20,56 +26,50 @@ function Input({ label, type = 'text', value, onChange, placeholder }) {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { isLoggedIn, user, login, logout } = useAuth();
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
-  const [email, setEmail] = useState('');
+  const [mode,     setMode]     = useState('login');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
 
   const handleLogin = async () => {
+    if (!email || !password) { setError('กรุณากรอก Email และ Password'); return; }
     setError(''); setLoading(true);
-    try {
-      await login(email, password);
-      navigate('/');
-    } catch (e) {
-      setError(e?.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ');
-    } finally { setLoading(false); }
+    try { await login(email, password); navigate('/'); }
+    catch (e) { setError(e?.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ'); }
+    finally { setLoading(false); }
   };
 
   const handleRegister = async () => {
+    if (!username || !email || !password) { setError('กรุณากรอกข้อมูลให้ครบ'); return; }
     setError(''); setLoading(true);
-    try {
-      await authAPI.register({ username, email, password });
-      await login(email, password);
-      navigate('/');
-    } catch (e) {
-      setError(e?.response?.data?.message || 'สมัครสมาชิกไม่สำเร็จ');
-    } finally { setLoading(false); }
+    try { await authAPI.register({ username, email, password }); await login(email, password); navigate('/'); }
+    catch (e) { setError(e?.response?.data?.message || 'สมัครสมาชิกไม่สำเร็จ'); }
+    finally { setLoading(false); }
   };
 
-  // ===== หน้า Profile (เมื่อ Login แล้ว) =====
+  const switchMode = (m) => { setMode(m); setError(''); setEmail(''); setPassword(''); setUsername(''); };
+
+  // ===== หน้า Profile (Login แล้ว) =====
   if (isLoggedIn) {
     return (
-      <div style={{ background: '#f7f5f8', minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
-        <div style={{ background: '#5A3D4E', padding: '16px 20px', color: 'white' }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>Profile</div>
+      <div style={{ background: T.pageBg, minHeight: '100vh' }}>
+        <div style={{ background: T.header, padding: '48px 16px 20px', color: T.white }}>
+          <div style={{ fontWeight: 700, fontSize: 17 }}>Profile</div>
+          <div style={{ fontSize: 11, opacity: 0.65, marginTop: 1 }}>Smart Mall</div>
         </div>
-        <div style={{ padding: '30px 20px 100px', textAlign: 'center' }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', background: '#e0d8e8',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 36, margin: '0 auto 16px',
-          }}>👤</div>
-          <div style={{ fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 4 }}>
-            {user?.username || 'User'}
+        <div style={{ padding: '36px 20px 100px', textAlign: 'center' }}>
+          <div style={{ width: 82, height: 82, borderRadius: '50%', background: '#e0dce8', border: `3px solid ${T.white}`, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Icon name="user" size={36} color={T.header} strokeWidth={1.4} />
           </div>
-          <div style={{ color: '#888', fontSize: 14, marginBottom: 32 }}>{user?.email}</div>
-          <button onClick={logout} style={{
-            background: 'white', color: '#5A3D4E', border: '1.5px solid #5A3D4E',
-            borderRadius: 10, padding: '12px 40px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          }}>
-            ออกจากระบบ
+          <div style={{ fontWeight: 700, fontSize: 19, color: T.textPrimary, marginBottom: 4 }}>{user?.username || 'User'}</div>
+          <div style={{ color: T.textSecondary, fontSize: 14, marginBottom: 32 }}>{user?.email}</div>
+          <button
+            onClick={logout}
+            style={{ background: T.white, color: T.header, border: `1.5px solid ${T.header}`, borderRadius: 11, padding: '11px 40px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            <Icon name="log-out" size={16} color={T.header} /> ออกจากระบบ
           </button>
         </div>
         <BottomNav />
@@ -77,77 +77,75 @@ export default function ProfilePage() {
     );
   }
 
-  // ===== หน้า Login/Register =====
+  // ===== หน้า Login / Register =====
   return (
-    <div style={{ background: '#f7f5f8', minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ background: '#5A3D4E', padding: '16px 20px', color: 'white' }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>Smart Mall</div>
-        <div style={{ fontSize: 12, opacity: 0.75 }}>Interactive Directory</div>
+    <div style={{ background: T.pageBg, minHeight: '100vh' }}>
+      <div style={{ background: T.header, padding: '48px 16px 20px', color: T.white }}>
+        <div style={{ fontWeight: 700, fontSize: 17 }}>Smart Mall</div>
+        <div style={{ fontSize: 11, opacity: 0.65, marginTop: 1 }}>Interactive Directory</div>
       </div>
 
-      <div style={{ padding: '24px 20px 100px' }}>
+      <div style={{ padding: '18px 16px 100px' }}>
+
         {/* Login Card */}
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: '50%', background: '#f0edf5',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 32, margin: '0 auto 14px',
-            }}>👤</div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#222' }}>Welcome to Smart Mall</div>
-            <div style={{ color: '#888', fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
-              Login or register to access multiple malls and save your favorite stores
+        <div style={{ background: T.white, borderRadius: 16, padding: '20px 20px 22px', marginBottom: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
+          {/* Avatar */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ width: 70, height: 70, borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Icon name="user" size={32} color={T.header} strokeWidth={1.4} />
             </div>
+            <div style={{ fontWeight: 700, fontSize: 17, color: T.textPrimary }}>Welcome to Smart Mall</div>
+            <div style={{ color: T.textSecondary, fontSize: 12, marginTop: 5, lineHeight: 1.5 }}>Login or register to save your favorite stores</div>
           </div>
 
           {/* Mock hint */}
-          <div style={{ background: '#f0fff4', border: '1px solid #b2f5c6', borderRadius: 8, padding: '8px 12px', marginBottom: 16, fontSize: 12, color: '#276749' }}>
-            🧪 Mock: ใช้ test@mail.com / 1234 เพื่อ Login ทดสอบ
+          <div style={{ background: '#f0fff4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '7px 11px', marginBottom: 16, fontSize: 11, color: '#166534' }}>
+            🧪 ทดสอบ: <strong>test@mail.com</strong> / <strong>1234</strong>
           </div>
 
           {mode === 'register' && (
-            <Input label="ชื่อผู้ใช้" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Your name" />
+            <InputField label="ชื่อผู้ใช้" value={username} onChange={e => setUsername(e.target.value)} placeholder="ชื่อของคุณ" />
           )}
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
-          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <InputField label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
+          <InputField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
 
           {error && (
-            <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 14, background: '#fff5f5', padding: '8px 12px', borderRadius: 8 }}>
+            <div style={{ color: '#b91c1c', fontSize: 12, marginBottom: 12, background: '#fef2f2', border: '1px solid #fecaca', padding: '8px 11px', borderRadius: 8 }}>
               ⚠️ {error}
             </div>
           )}
 
-          <button onClick={mode === 'login' ? handleLogin : handleRegister} disabled={loading} style={{
-            width: '100%', padding: '13px', background: '#5A3D4E', color: 'white',
-            border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600,
-            cursor: 'pointer', marginBottom: 10, opacity: loading ? 0.7 : 1,
-          }}>
-            {loading ? 'กำลังดำเนินการ...' : mode === 'login' ? '→ Login' : '→ Register'}
+          {/* ปุ่ม Login / Register */}
+          <button
+            onClick={mode === 'login' ? handleLogin : handleRegister}
+            disabled={loading}
+            style={{ width: '100%', padding: '12px', background: loading ? '#888' : T.header, color: T.white, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 10, fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            <Icon name={mode === 'login' ? 'log-in' : 'user-plus'} size={17} color={T.white} />
+            {loading ? 'กำลังดำเนินการ...' : mode === 'login' ? 'Login' : 'Register'}
           </button>
 
-          <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} style={{
-            width: '100%', padding: '12px', background: 'white', color: '#5A3D4E',
-            border: '1.5px solid #5A3D4E', borderRadius: 10, fontSize: 14,
-            fontWeight: 500, cursor: 'pointer',
-          }}>
-            {mode === 'login' ? '📝 Register' : '← Back to Login'}
+          {/* ปุ่มสลับ mode */}
+          <button
+            onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
+            style={{ width: '100%', padding: '11px', background: T.white, color: T.header, border: `1.5px solid #ddd`, borderRadius: 11, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {mode === 'login' ? 'สมัครสมาชิก' : '← กลับไปหน้า Login'}
           </button>
         </div>
 
-        {/* Features */}
+        {/* Feature Cards */}
         {[
-          { icon: '🤍', title: 'Save Favorites', desc: 'Save your favorite stores and products for quick access anytime' },
-          { icon: '🏬', title: 'Browse Multiple Malls', desc: 'Register to access directories for multiple shopping malls in your area' },
-        ].map((f) => (
-          <div key={f.title} style={{
-            display: 'flex', alignItems: 'center', gap: 14, background: 'white',
-            borderRadius: 12, padding: '14px 16px', marginBottom: 10,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f5f0f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{f.icon}</div>
+          { icon: 'heart', title: 'Save Favorites', desc: 'Save your favorite stores and products for quick access anytime' },
+          { icon: 'building', title: 'Browse Multiple Malls', desc: 'Access directories for multiple shopping malls in your area' },
+        ].map(({ icon, title, desc }) => (
+          <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.white, borderRadius: 12, padding: '13px 14px', marginBottom: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', border: `1px solid ${T.cardBorder}` }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={icon} size={19} color={T.header} strokeWidth={1.6} />
+            </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{f.title}</div>
-              <div style={{ color: '#888', fontSize: 12, marginTop: 2 }}>{f.desc}</div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: T.textPrimary }}>{title}</div>
+              <div style={{ color: T.textSecondary, fontSize: 11, marginTop: 2, lineHeight: 1.4 }}>{desc}</div>
             </div>
           </div>
         ))}

@@ -1,112 +1,129 @@
-// src/pages/FavoritesPage.jsx — หน้ารายการโปรด (Image 3)
+// ============================================================
+// src/pages/FavoritesPage.jsx — หน้ารายการโปรด
+// ============================================================
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
 import { favoriteAPI } from '../services/api';
 import BottomNav from '../components/layout/BottomNav';
+import Icon, { CategoryIcon } from '../components/Icons';
+import { T } from '../theme';
+
+function FavoriteItem({ item, onRemove }) {
+  const [removing, setRemoving] = useState(false);
+
+  const handleRemove = async () => {
+    setRemoving(true);
+    await onRemove(item.id);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.white, borderRadius: 12, padding: '12px 14px', marginBottom: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', border: `1px solid ${T.cardBorder}`, opacity: removing ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+      <div style={{ width: 46, height: 46, borderRadius: 10, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <CategoryIcon categoryName={item.category_name} size={24} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: T.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+        <div style={{ color: T.textSecondary, fontSize: 12, marginTop: 2 }}>{item.category_name || item.store_name}</div>
+      </div>
+      {/* ปุ่มลบ */}
+      <button
+        onClick={handleRemove}
+        disabled={removing}
+        style={{ background: '#fff0f0', border: '1px solid #fecaca', borderRadius: 8, width: 34, height: 34, cursor: removing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+      >
+        <Icon name="trash" size={15} color={T.danger} />
+      </button>
+    </div>
+  );
+}
+
+function EmptyState({ tab, onBrowse }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+      <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+        <Icon name="heart" size={32} color={T.heartPurple} strokeWidth={1.4} />
+      </div>
+      <div style={{ fontWeight: 700, fontSize: 17, color: T.textPrimary, marginBottom: 8 }}>No Favorites Yet</div>
+      <div style={{ color: T.textSecondary, fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>
+        Start adding {tab === 'stores' ? 'stores' : 'products'} to your favorites<br />to easily find them later
+      </div>
+      <button
+        onClick={onBrowse}
+        style={{ background: T.header, color: T.white, border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+      >
+        <Icon name="map" size={15} color={T.white} /> Browse Stores
+      </button>
+    </div>
+  );
+}
 
 export default function FavoritesPage() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const [tab, setTab] = useState('stores'); // 'stores' | 'products'
+  const [tab, setTab] = useState('stores');
 
-  const { data: favStores, loading: loadingStores, refetch } = useFetch(
-    () => favoriteAPI.getStores(), [isLoggedIn]
-  );
-  const { data: favProducts, loading: loadingProducts } = useFetch(
-    () => favoriteAPI.getProducts(), [isLoggedIn]
-  );
+  const { data: favStores,   loading: ls, refetch: refetchStores   } = useFetch(() => favoriteAPI.getStores(),   [isLoggedIn]);
+  const { data: favProducts, loading: lp, refetch: refetchProducts } = useFetch(() => favoriteAPI.getProducts(), [isLoggedIn]);
 
-  const handleRemoveStore = async (storeId) => {
-    await favoriteAPI.removeStore(storeId);
-    refetch();
-  };
+  const handleRemoveStore   = async (id) => { await favoriteAPI.removeStore(id);   refetchStores(); };
+  const handleRemoveProduct = async (id) => { await favoriteAPI.removeProduct(id); refetchProducts(); };
 
-  const isEmpty = tab === 'stores' ? !favStores?.length : !favProducts?.length;
-  const loading = tab === 'stores' ? loadingStores : loadingProducts;
+  const currentItems   = tab === 'stores' ? favStores   : favProducts;
+  const currentLoading = tab === 'stores' ? ls           : lp;
+  const handleRemove   = tab === 'stores' ? handleRemoveStore : handleRemoveProduct;
+  const totalCount     = (favStores?.length || 0) + (favProducts?.length || 0);
 
   return (
-    <div style={{ background: '#f7f5f8', minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ background: T.pageBg, minHeight: '100vh' }}>
+
       {/* Header */}
-      <div style={{ background: '#5A3D4E', padding: '16px 20px 0', color: 'white' }}>
+      <div style={{ background: T.header, padding: '48px 16px 0', color: T.white }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', fontSize: 20, cursor: 'pointer' }}>←</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={() => navigate(-1)} style={{ background: T.headerLight, border: 'none', width: 32, height: 32, borderRadius: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="arrow-left" size={17} color={T.white} />
+            </button>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 18 }}>My Favorites</div>
-              <div style={{ fontSize: 12, opacity: 0.75 }}>
-                {(favStores?.length || 0) + (favProducts?.length || 0)} saved items
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 17 }}>My Favorites</div>
+              <div style={{ fontSize: 11, opacity: 0.65, marginTop: 1 }}>{totalCount} saved items</div>
             </div>
           </div>
-          <span style={{ fontSize: 22 }}>🤍</span>
+          <Icon name="heart-fill" size={20} color="rgba(255,255,255,0.6)" />
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: 3, marginBottom: -1 }}>
-          {['stores', 'products'].map((t) => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              flex: 1, padding: '8px 0', borderRadius: 6, border: 'none',
-              background: tab === t ? 'white' : 'transparent',
-              color: tab === t ? '#5A3D4E' : 'rgba(255,255,255,0.8)',
-              fontWeight: tab === t ? 700 : 400, fontSize: 13, cursor: 'pointer',
-              textTransform: 'capitalize',
-            }}>
-              Favorite {t.charAt(0).toUpperCase() + t.slice(1)}
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.1)', borderRadius: 9, padding: 3, marginBottom: 0 }}>
+          {[{ key: 'stores', label: 'Favorite Stores' }, { key: 'products', label: 'Favorite Products' }].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{ flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', background: tab === key ? T.white : 'transparent', color: tab === key ? T.header : 'rgba(255,255,255,0.8)', fontWeight: tab === key ? 600 : 400, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}
+            >
+              {label}
             </button>
           ))}
         </div>
+        <div style={{ height: 14 }} />
       </div>
 
-      <div style={{ padding: '20px 16px 100px' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>กำลังโหลด...</div>
-        ) : isEmpty ? (
-          /* Empty State */
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: '50%',
-              background: '#f0edf5', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 30, margin: '0 auto 20px',
-            }}>🤍</div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#333', marginBottom: 8 }}>No Favorites Yet</div>
-            <div style={{ color: '#888', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
-              Start adding {tab} to your favorites to easily find them later
-            </div>
-            <button onClick={() => navigate('/stores')} style={{
-              background: '#5A3D4E', color: 'white', border: 'none',
-              borderRadius: 10, padding: '12px 24px', fontSize: 14,
-              fontWeight: 600, cursor: 'pointer', display: 'inline-flex',
-              alignItems: 'center', gap: 8,
-            }}>
-              🗺️ Browse Stores
-            </button>
-          </div>
-        ) : (
-          /* Filled State */
-          (tab === 'stores' ? favStores : favProducts)?.map((item) => (
-            <div key={item.id} style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              background: 'white', borderRadius: 12, padding: '14px 16px',
-              marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 10, background: '#f5f0f5',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-              }}>
-                {item.category_icon || '🏪'}
-              </div>
+      {/* Content */}
+      <div style={{ padding: '16px 14px 100px' }}>
+        {currentLoading
+          ? [1,2].map(i => (
+            <div key={i} style={{ display: 'flex', gap: 12, background: T.white, borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 10, background: '#eee' }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{item.name}</div>
-                <div style={{ color: '#888', fontSize: 13 }}>{item.category_name}</div>
+                <div style={{ width: '50%', height: 13, background: '#eee', borderRadius: 6, marginBottom: 8 }} />
+                <div style={{ width: '35%', height: 11, background: '#f5f5f5', borderRadius: 6 }} />
               </div>
-              <button onClick={() => handleRemoveStore(item.id)} style={{
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#e88',
-              }}>🗑️</button>
             </div>
           ))
-        )}
+          : !currentItems?.length
+            ? <EmptyState tab={tab} onBrowse={() => navigate('/stores')} />
+            : currentItems.map(item => <FavoriteItem key={item.id} item={item} onRemove={handleRemove} />)
+        }
       </div>
       <BottomNav />
     </div>
