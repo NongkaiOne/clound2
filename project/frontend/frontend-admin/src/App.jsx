@@ -5,6 +5,8 @@ import MapEditorLogin from './pages/MapEditorLogin'
 import SellerLayout from './pages/seller/SellerLayout'
 import SellerDashboard from './pages/seller/SellerDashboard'
 import SellerProducts from './pages/seller/SellerProducts'
+import MapEditorLayout from './pages/mapeditor/MapEditorLayout'
+import MapEditorDashboard from './pages/mapeditor/MapEditorDashboard'
 
 export default function App() {
   return (
@@ -17,6 +19,10 @@ export default function App() {
           <Route index element={<Navigate to="/seller/dashboard" replace />} />
           <Route path="dashboard" element={<SellerDashboard />} />
           <Route path="products" element={<SellerProducts />} />
+        </Route>
+        <Route path="/mapeditor" element={<MapEditorLayout />}>
+          <Route index element={<Navigate to="/mapeditor/dashboard" replace />} />
+          <Route path="dashboard" element={<MapEditorDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>
