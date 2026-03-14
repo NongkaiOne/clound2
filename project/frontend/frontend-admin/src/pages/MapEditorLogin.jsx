@@ -6,8 +6,7 @@ export default function MapEditorLogin() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // TODO: เชื่อม API login จริงทีหลัง
-    alert('Map Editor Login!')
+    navigate('/mapeditor/dashboard')
   }
 
   return (
