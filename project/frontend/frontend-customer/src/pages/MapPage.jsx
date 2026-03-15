@@ -224,9 +224,9 @@ export default function MapPage() {
 
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button onClick={()=>navigate(-1)} style={{ background:'rgba(255,255,255,0.15)', border:'none', color:'white', width:32, height:32, borderRadius:9, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {/* <button onClick={()=>navigate(-1)} style={{ background:'rgba(255,255,255,0.15)', border:'none', color:'white', width:32, height:32, borderRadius:9, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <Icon name="arrow-left" size={17} color="white"/>
-            </button>
+            </button> */}
             <div>
               <div style={{ fontWeight:700, fontSize:17 }}>{selectedMall?.name || 'Smart Mall'}</div>
               <div style={{ fontSize:11, opacity:0.65 }}>Interactive Directory</div>

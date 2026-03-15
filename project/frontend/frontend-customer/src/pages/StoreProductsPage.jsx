@@ -237,7 +237,7 @@ export default function StoreProductsPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
-            <button
+            {/* <button
               onClick={() => navigate(-1)}
               style={{
                 background: T.headerLight,
@@ -252,7 +252,7 @@ export default function StoreProductsPage() {
               }}
             >
               <Icon name="arrow-left" size={17} color={T.white} />
-            </button>
+            </button> */}
 
             <div>
 

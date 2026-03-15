@@ -228,7 +228,7 @@ export default function FavoritesPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
+            {/* <button
               onClick={() => navigate(-1)}
               style={{
                 background: T.headerLight,
@@ -243,7 +243,7 @@ export default function FavoritesPage() {
               }}
             >
               <Icon name="arrow-left" size={17} color={T.white} />
-            </button>
+            </button> */}
 
             <div>
               <div style={{ fontWeight: 700, fontSize: 17 }}>
