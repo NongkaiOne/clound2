@@ -15,6 +15,7 @@ export default function MapEditorDashboard() {
     const { stores, setStores, areas, setAreas } = useStores()
     const [currentFloor, setCurrentFloor] = useState('LG')
     const [deleteId, setDeleteId] = useState(null)
+    const [editStore, setEditStore] = useState(null)
     const [zoom, setZoom] = useState(1.5)
     const [pan, setPan] = useState({ x: 0, y: 0 })
     const [isPanning, setIsPanning] = useState(false)
@@ -384,7 +385,9 @@ export default function MapEditorDashboard() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+                                <button
+                                    onClick={() => setEditStore({ ...store })}
+                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
                                     <Pencil className="w-4 h-4" />
                                 </button>
                                 <button onClick={() => setDeleteId(store.id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
@@ -501,6 +504,98 @@ export default function MapEditorDashboard() {
                             >
                                 Add Store
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Store Modal */}
+            {editStore && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">Edit Store</h3>
+                                <p className="text-sm text-gray-400">Update store information</p>
+                            </div>
+                            <button onClick={() => setEditStore(null)} className="text-gray-400 hover:text-gray-700">✕</button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Store Name *</label>
+                                <input type="text" value={editStore.name}
+                                    onChange={(e) => setEditStore({ ...editStore, name: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                                <select value={editStore.category}
+                                    onChange={(e) => setEditStore({ ...editStore, category: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]">
+                                    <option value="Clothing">Clothing</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Food">Food</option>
+                                    <option value="Books">Books</option>
+                                    <option value="Shoes">Shoes</option>
+                                    <option value="Beauty">Beauty</option>
+                                    <option value="Sports">Sports</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Floor *</label>
+                                <select value={editStore.floor}
+                                    onChange={(e) => setEditStore({ ...editStore, floor: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]">
+                                    <option value="LG">LG Floor</option>
+                                    <option value="G">Ground Floor</option>
+                                    <option value="1">Floor 1</option>
+                                    <option value="2">Floor 2</option>
+                                    <option value="3">Floor 3</option>
+                                    <option value="4">Floor 4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea value={editStore.description || ''}
+                                    onChange={(e) => setEditStore({ ...editStore, description: e.target.value })}
+                                    rows={3} className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] resize-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Store Logo</label>
+                                {editStore.logo && (
+                                    <img src={editStore.logo} alt="logo" className="w-12 h-12 rounded-full object-cover mb-2" />
+                                )}
+                                <input type="file" accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0]
+                                        if (file) setEditStore({ ...editStore, logo: URL.createObjectURL(file) })
+                                    }}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+                                <p className="text-xs text-gray-400 mt-1">Upload a store logo (optional)</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center mt-6">
+                            <button
+                                onClick={() => { setDeleteId(editStore.id); setEditStore(null) }}
+                                className="flex items-center gap-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 text-sm rounded-lg font-medium"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Store
+                            </button>
+                            <div className="flex gap-3">
+                                <button onClick={() => setEditStore(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                                <button
+                                    onClick={() => {
+                                        if (!editStore.name || !editStore.category) return
+                                        setStores(stores.map(s => s.id === editStore.id ? editStore : s))
+                                        setEditStore(null)
+                                    }}
+                                    className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
