@@ -16,5 +16,5 @@ SOURCE MallMap.sql;
 3. Import sample data
 
 ```
-SOURCE SampleData.sql;
+SOURCE sampleData.sql;
 ```
