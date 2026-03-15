@@ -199,7 +199,7 @@ export default function MallsPage() {
             marginBottom: 14
           }}
         >
-          <button
+          {/* <button
             onClick={() => navigate(-1)}
             style={{
               background: T.headerLight,
@@ -214,7 +214,7 @@ export default function MallsPage() {
             }}
           >
             <Icon name="arrow-left" size={17} color={T.white} />
-          </button>
+          </button> */}
 
           <div>
             <div style={{ fontWeight: 700, fontSize: 18 }}>Select Mall</div>
