@@ -1,21 +1,11 @@
 import { useState } from 'react'
-import { Package, Pencil, Trash2 } from 'lucide-react'
-
-const initialProducts = [
-    { id: 1, name: 'Cotton T-Shirt', price: 29.99, stock: 45, status: 'In Stock', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=40&h=40&fit=crop' },
-    { id: 2, name: 'Denim Jeans', price: 79.99, stock: 32, status: 'In Stock', image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=40&h=40&fit=crop' },
-    { id: 3, name: 'Sneakers', price: 59.99, stock: 3, status: 'Low Stock', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=40&h=40&fit=crop' },
-    { id: 4, name: 'Leather Wallet', price: 39.99, stock: 0, status: 'Out of Stock', image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=40&h=40&fit=crop' },
-]
+import { Pencil, Trash2 } from 'lucide-react'
+import { useStores } from '../../context/StoreContext'
 
 export default function SellerProducts() {
-    const [products, setProducts] = useState(initialProducts)
+    const { stores: products, setStores: setProducts } = useStores()
     const [editProduct, setEditProduct] = useState(null)
     const [deleteId, setDeleteId] = useState(null)
-
-    const handleEdit = (product) => {
-        setEditProduct({ ...product })
-    }
 
     const handleUpdate = () => {
         setProducts(products.map((p) =>
@@ -61,31 +51,33 @@ export default function SellerProducts() {
                         {products.map((product) => (
                             <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50">
                                 <td className="py-3 flex items-center gap-3">
-                                    <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover" />
+                                    <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-xl overflow-hidden">
+                                        {product.logo
+                                            ? <img src={product.logo} alt={product.name} className="w-full h-full object-cover" />
+                                            : product.icon || '🏪'}
+                                    </div>
                                     {product.name}
                                 </td>
-                                <td className="py-3 text-gray-700">฿{product.price}</td>
-                                <td className="py-3 text-gray-700">{product.stock}</td>
+                                <td className="py-3 text-gray-700">{product.price ? `฿${product.price}` : '-'}</td>
+                                <td className="py-3 text-gray-700">{product.stock ?? '-'}</td>
                                 <td className="py-3">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${product.status === 'In Stock' ? 'bg-gray-700 text-white'
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        product.status === 'In Stock' ? 'bg-gray-700 text-white'
                                         : product.status === 'Low Stock' ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-red-100 text-red-600'
-                                        }`}>
-                                        {product.status}
+                                        : product.status === 'Out of Stock' ? 'bg-red-100 text-red-600'
+                                        : 'bg-gray-100 text-gray-500'
+                                    }`}>
+                                        {product.status || product.category || '-'}
                                     </span>
                                 </td>
                                 <td className="py-3 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <button
-                                            onClick={() => handleEdit(product)}
-                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                                        >
+                                        <button onClick={() => setEditProduct({ ...product })}
+                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
                                             <Pencil className="w-4 h-4" />
                                         </button>
-                                        <button
-                                            onClick={() => setDeleteId(product.id)}
-                                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                        >
+                                        <button onClick={() => setDeleteId(product.id)}
+                                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -107,76 +99,49 @@ export default function SellerProducts() {
                             </div>
                             <button onClick={() => setEditProduct(null)} className="text-gray-400 hover:text-gray-700">✕</button>
                         </div>
-
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                                <input
-                                    type="text"
-                                    value={editProduct.name}
+                                <input type="text" value={editProduct.name}
                                     onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]"
-                                />
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Price (฿)</label>
-                                <input
-                                    type="number"
-                                    value={editProduct.price}
+                                <input type="number" value={editProduct.price || ''}
                                     onChange={(e) => setEditProduct({ ...editProduct, price: parseFloat(e.target.value) })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]"
-                                />
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                                <input
-                                    type="number"
-                                    value={editProduct.stock}
+                                <input type="number" value={editProduct.stock || ''}
                                     onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]"
-                                />
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-                                {editProduct.image && (
-                                    <img
-                                        src={editProduct.image}
-                                        alt="preview"
-                                        className="w-20 h-20 rounded object-cover mb-2"
-                                    />
+                                {editProduct.logo && (
+                                    <img src={editProduct.logo} alt="preview" className="w-20 h-20 rounded object-cover mb-2" />
                                 )}
-                                <input
-                                    type="file"
-                                    accept="image/*"
+                                <input type="file" accept="image/*"
                                     onChange={(e) => {
                                         const file = e.target.files[0]
-                                        if (file) {
-                                            const url = URL.createObjectURL(file)
-                                            setEditProduct({ ...editProduct, image: url })
-                                        }
+                                        if (file) setEditProduct({ ...editProduct, logo: URL.createObjectURL(file) })
                                     }}
-                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                                />
+                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
                             </div>
                         </div>
-
                         <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                onClick={() => setEditProduct(null)}
-                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleUpdate}
-                                className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium"
-                            >
+                            <button onClick={() => setEditProduct(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                            <button onClick={handleUpdate} className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium">
                                 Update Product
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirm Modal */}
             {deleteId && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm text-center">
@@ -186,18 +151,8 @@ export default function SellerProducts() {
                         <h3 className="text-lg font-bold text-gray-800 mb-2">Delete Product</h3>
                         <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this product? This action cannot be undone.</p>
                         <div className="flex justify-center gap-3">
-                            <button
-                                onClick={() => setDeleteId(null)}
-                                className="px-6 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium"
-                            >
-                                Delete
-                            </button>
+                            <button onClick={() => setDeleteId(null)} className="px-6 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg">Cancel</button>
+                            <button onClick={handleDelete} className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium">Delete</button>
                         </div>
                     </div>
                 </div>
