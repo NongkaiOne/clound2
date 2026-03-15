@@ -13,25 +13,23 @@ import { StoreProvider } from './context/StoreContext'
 export default function App() {
     return (
         <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<RoleSelection />} />
-                <Route path="/seller-login" element={<SellerLogin />} />
-                <Route path="/map-editor-login" element={<MapEditorLogin />} />
-                <Route path="/seller" element={<SellerLayout />}>
-                    <Route index element={<Navigate to="/seller/dashboard" replace />} />
-                    <Route path="dashboard" element={<SellerDashboard />} />
-                    <Route path="products" element={<SellerProducts />} />
-                </Route>
-                <Route path="/mapeditor" element={
-                    <StoreProvider>
-                        <MapEditorLayout />
-                    </StoreProvider>
-                }>
-                    <Route index element={<Navigate to="/mapeditor/dashboard" replace />} />
-                    <Route path="dashboard" element={<MapEditorDashboard />} />
-                    <Route path="map" element={<MapEditorMap />} />
-                </Route>
-            </Routes>
+            <StoreProvider>
+                <Routes>
+                    <Route path="/" element={<RoleSelection />} />
+                    <Route path="/seller-login" element={<SellerLogin />} />
+                    <Route path="/map-editor-login" element={<MapEditorLogin />} />
+                    <Route path="/seller" element={<SellerLayout />}>
+                        <Route index element={<Navigate to="/seller/dashboard" replace />} />
+                        <Route path="dashboard" element={<SellerDashboard />} />
+                        <Route path="products" element={<SellerProducts />} />
+                    </Route>
+                    <Route path="/mapeditor" element={<MapEditorLayout />}>
+                        <Route index element={<Navigate to="/mapeditor/dashboard" replace />} />
+                        <Route path="dashboard" element={<MapEditorDashboard />} />
+                        <Route path="map" element={<MapEditorMap />} />
+                    </Route>
+                </Routes>
+            </StoreProvider>
         </BrowserRouter>
     )
 }
