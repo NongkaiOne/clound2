@@ -1,53 +1,124 @@
 from flask import Blueprint, request, jsonify
-from db import connect_db
+from db import get_connection  # เปลี่ยนมาใช้ get_connection เพื่อให้เป็นมาตรฐานเดียวกัน
 from middleware_auth import require_role
 
 store_bp = Blueprint("store", __name__)
 
-# stores = [
-#     {"id": 1, "name": "Nike", "x": 100, "y": 200},
-#     {"id": 2, "name": "Adidas", "x": 300, "y": 150}
-# ] #fortesting without db
-
-@store_bp.route("/stores", methods=["GET"])
+# ==========================================
+# 1. Get All Stores (ดึงข้อมูลร้านค้าทั้งหมด)
+# API Endpoint: GET /api/store/
+# ==========================================
+@store_bp.route("/", methods=["GET"])
 def get_stores():
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    db = connect_db()
-    cursor = db.cursor(dictionary=True)
+        # ใช้ Schema ฐานข้อมูลที่ละเอียดขึ้นจากโค้ดที่ 2
+        sql = """
+        SELECT StoreID, UserID, StoreName, StoreCategoryID,
+               Phone, LogoURL, FloorID, PosX, PosY
+        FROM Store
+        """
+        cursor.execute(sql)
+        stores = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM stores")
+        return jsonify({
+            "status": "ok",
+            "stores": stores
+        }), 200
 
-    return jsonify(cursor.fetchall())
-    # return jsonify(stores) #fortesting without db
+    except Exception as e:
+        print("ERROR GET STORES:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
-@store_bp.route("/stores", methods=["POST"])
-@require_role("Admin")
+# ==========================================
+# 2. Create Store (สร้างร้านค้าใหม่)
+# API Endpoint: POST /api/store/
+# ==========================================
+@store_bp.route("/", methods=["POST"])
+@require_role("Admin")  # ใช้ Middleware เดิมของคุณได้เลย
 def create_store():
+    conn = None
+    cursor = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "No JSON received"}), 400
 
-    data = request.json
+        # รับค่าตาม Schema ใหม่
+        userID = data.get("UserID")
+        storeName = data.get("StoreName")
+        categoryID = data.get("StoreCategoryID")
+        phone = data.get("Phone")
+        logo = data.get("LogoURL")
+        floorID = data.get("FloorID")
+        posX = data.get("PosX")
+        posY = data.get("PosY")
 
-    db = connect_db()
-    cursor = db.cursor()
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    cursor.execute(
-        "INSERT INTO stores(name,x,y) VALUES(%s,%s,%s)",
-        (data["name"], data["x"], data["y"])
-    )
+        sql = """
+        INSERT INTO Store
+        (UserID, StoreName, StoreCategoryID, Phone, LogoURL, FloorID, PosX, PosY)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        cursor.execute(sql, (
+            userID, storeName, categoryID, phone, logo, floorID, posX, posY
+        ))
+        
+        conn.commit()
 
-    db.commit()
+        return jsonify({
+            "status": "ok", 
+            "message": "Store created successfully"
+        }), 201
 
-    return jsonify({"message": "store created"})
+    except Exception as e:
+        print("ERROR CREATE STORE:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
-@store_bp.route("/stores/<int:id>", methods=["DELETE"])
+# ==========================================
+# 3. Delete Store (ลบร้านค้า)
+# API Endpoint: DELETE /api/store/<store_id>
+# ==========================================
+@store_bp.route("/<int:store_id>", methods=["DELETE"])
 @require_role("Admin")
-def delete_store(id):
+def delete_store(store_id):
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    db = connect_db()
-    cursor = db.cursor()
+        # อิงตามชื่อ Column DB ใหม่ (StoreID)
+        cursor.execute("DELETE FROM Store WHERE StoreID=%s", (store_id,))
+        conn.commit()
 
-    cursor.execute("DELETE FROM stores WHERE id=%s", (id,))
-    db.commit()
+        # เช็คว่าลบสำเร็จจริงๆ หรือไม่ (มีข้อมูลถูกลบไปไหม)
+        if cursor.rowcount == 0:
+            return jsonify({"status": "error", "message": "Store not found"}), 404
 
-    return jsonify({"message": "store deleted"})
+        return jsonify({
+            "status": "ok", 
+            "message": "Store deleted successfully"
+        }), 200
+
+    except Exception as e:
+        print("ERROR DELETE STORE:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
