@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { MapPin, Pencil, Trash2 } from 'lucide-react'
+import { useStores } from '../../context/StoreContext'
 
 const floors = [
     { id: 'LG', label: 'LG', image: '/picture/LG.png' },
@@ -10,26 +11,21 @@ const floors = [
     { id: '4', label: '4', image: '/picture/4.png' },
 ]
 
-const initialStores = [
-    { id: 1, name: 'Fashion Hub', category: 'Clothing', floor: 'G', icon: '👕', logo: null },
-    { id: 2, name: 'Tech World', category: 'Electronics', floor: 'G', icon: '💻', logo: null },
-    { id: 3, name: 'Book Haven', category: 'Books', floor: '1', icon: '📚', logo: null },
-    { id: 4, name: 'Gourmet Food', category: 'Food', floor: '1', icon: '🍽️', logo: null },
-    { id: 5, name: 'Sneaker Store', category: 'Shoes', floor: 'LG', icon: '👟', logo: null },
-]
-
 export default function MapEditorDashboard() {
-    const [stores, setStores] = useState(initialStores)
+    const { stores, setStores, areas, setAreas } = useStores()
     const [currentFloor, setCurrentFloor] = useState('LG')
     const [deleteId, setDeleteId] = useState(null)
+    const [editStore, setEditStore] = useState(null)
     const [zoom, setZoom] = useState(1.5)
     const [pan, setPan] = useState({ x: 0, y: 0 })
     const [isPanning, setIsPanning] = useState(false)
     const [showAddStore, setShowAddStore] = useState(false)
-    const [newStore, setNewStore] = useState({ name: '', category: '', floor: 'G', description: '', logo: null })
+    const [newStore, setNewStore] = useState({
+        name: '', category: '', floor: 'G', description: '', logo: null,
+        email: '', password: '', confirmPassword: ''
+    })
     const [drawingMode, setDrawingMode] = useState(false)
     const [currentPoints, setCurrentPoints] = useState([])
-    const [areas, setAreas] = useState([])
     const [pendingArea, setPendingArea] = useState(null)
     const [assignStore, setAssignStore] = useState('')
 
@@ -211,10 +207,7 @@ export default function MapEditorDashboard() {
                                     ✓ Confirm Area ({currentPoints.length} pts)
                                 </button>
                                 <button
-                                    onClick={() => {
-                                        setDrawingMode(false)
-                                        setCurrentPoints([])
-                                    }}
+                                    onClick={() => { setDrawingMode(false); setCurrentPoints([]) }}
                                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
                                 >
                                     ✕ Cancel
@@ -278,37 +271,27 @@ export default function MapEditorDashboard() {
                     onClick={(e) => {
                         if (!drawingMode) return
                         const rect = e.currentTarget.getBoundingClientRect()
-                        const clickX = e.clientX - rect.left
-                        const clickY = e.clientY - rect.top
-                        const pos = toImagePct(clickX, clickY)
+                        const pos = toImagePct(e.clientX - rect.left, e.clientY - rect.top)
                         setCurrentPoints([...currentPoints, pos])
                     }}
                 >
-                    {/* Zoom % */}
                     <div className="absolute top-3 left-3 bg-white text-xs text-gray-500 px-2 py-1 rounded shadow-sm z-10">
                         {Math.round(zoom * 100)}%
                     </div>
 
-                    {/* Drawing hint */}
                     {drawingMode && (
                         <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-yellow-50 border border-yellow-300 text-yellow-700 text-xs px-4 py-1.5 rounded-full shadow-sm z-10">
                             คลิกเพื่อเพิ่มจุด ({currentPoints.length} จุด) • ต้องการอย่างน้อย 3 จุด
                         </div>
                     )}
 
-                    {/* Zoom buttons */}
                     <div className="absolute top-3 right-3 flex flex-col gap-1 z-10">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 3)) }}
-                            className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600"
-                        >+</button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.25, 0.5)) }}
-                            className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600"
-                        >−</button>
+                        <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 3)) }}
+                            className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600">+</button>
+                        <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.25, 0.5)) }}
+                            className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600">−</button>
                     </div>
 
-                    {/* Map Image */}
                     <img
                         src={currentFloorData.image}
                         alt={`Floor ${currentFloor}`}
@@ -322,7 +305,6 @@ export default function MapEditorDashboard() {
                         draggable={false}
                     />
 
-                    {/* SVG Areas */}
                     <svg className="absolute inset-0 w-full h-full z-10 pointer-events-none">
                         {areas.filter((a) => a.floor === currentFloor).map((area, i) => {
                             const pts = area.points.map(p => {
@@ -331,81 +313,45 @@ export default function MapEditorDashboard() {
                             }).join(' ')
                             return (
                                 <g key={i}>
-                                    <polygon
-                                        points={pts}
-                                        fill={colors[i % colors.length]}
-                                        stroke={strokes[i % strokes.length]}
-                                        strokeWidth="1.5"
-                                        strokeDasharray="4 2"
-                                    />
+                                    <polygon points={pts} fill={colors[i % colors.length]} stroke={strokes[i % strokes.length]} strokeWidth="1.5" strokeDasharray="4 2" />
                                 </g>
                             )
                         })}
 
-                        {/* Drawing preview */}
                         {currentPoints.length > 0 && (
                             <>
                                 {currentPoints.length >= 2 && (
                                     <polygon
-                                        points={currentPoints.map(p => {
-                                            const s = toScreenPos(p.x, p.y)
-                                            return `${s.x},${s.y}`
-                                        }).join(' ')}
-                                        fill="rgba(201,168,76,0.1)"
-                                        stroke="#c9a84c"
-                                        strokeWidth="1.5"
-                                        strokeDasharray="4 2"
+                                        points={currentPoints.map(p => { const s = toScreenPos(p.x, p.y); return `${s.x},${s.y}` }).join(' ')}
+                                        fill="rgba(201,168,76,0.1)" stroke="#c9a84c" strokeWidth="1.5" strokeDasharray="4 2"
                                     />
                                 )}
                                 {currentPoints.map((p, idx) => {
                                     const s = toScreenPos(p.x, p.y)
-                                    return (
-                                        <circle key={idx} cx={s.x} cy={s.y} r="5" fill="#c9a84c" stroke="white" strokeWidth="2" />
-                                    )
+                                    return <circle key={idx} cx={s.x} cy={s.y} r="5" fill="#c9a84c" stroke="white" strokeWidth="2" />
                                 })}
                             </>
                         )}
                     </svg>
 
-                    {/* Markers */}
                     {areas.filter((a) => a.floor === currentFloor).map((area, i) => {
                         const centroid = getCentroid(area.points)
                         const screenPos = toScreenPos(centroid.x, centroid.y)
                         const store = stores.find(s => s.name === area.storeName)
                         return (
-                            <div
-                                key={i}
-                                className="absolute z-20 pointer-events-none"
-                                style={{
-                                    left: screenPos.x,
-                                    top: screenPos.y,
-                                    transform: 'translate(-50%, -100%)'
-                                }}
-                            >
+                            <div key={i} className="absolute z-20 pointer-events-none"
+                                style={{ left: screenPos.x, top: screenPos.y, transform: 'translate(-50%, -100%)' }}>
                                 <div className="flex flex-col items-center">
                                     <div style={{
-                                        width: 36, height: 36,
-                                        borderRadius: '50%',
+                                        width: 36, height: 36, borderRadius: '50%',
                                         border: `3px solid ${strokes[i % strokes.length]}`,
-                                        background: 'white',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: 16,
-                                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                                        background: 'white', overflow: 'hidden',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 16, boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                                     }}>
-                                        {store?.logo
-                                            ? <img src={store.logo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={store?.name} />
-                                            : store?.icon || '🏪'
-                                        }
+                                        {store?.logo ? <img src={store.logo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={store?.name} /> : store?.icon || '🏪'}
                                     </div>
-                                    <div style={{
-                                        width: 0, height: 0,
-                                        borderLeft: '6px solid transparent',
-                                        borderRight: '6px solid transparent',
-                                        borderTop: `8px solid ${strokes[i % strokes.length]}`
-                                    }} />
+                                    <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `8px solid ${strokes[i % strokes.length]}` }} />
                                 </div>
                             </div>
                         )
@@ -428,9 +374,7 @@ export default function MapEditorDashboard() {
                         <div key={store.id} className="flex items-center justify-between py-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-xl overflow-hidden">
-                                    {store.logo
-                                        ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
-                                        : store.icon}
+                                    {store.logo ? <img src={store.logo} alt={store.name} className="w-full h-full object-cover" /> : store.icon}
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-800">{store.name}</p>
@@ -441,13 +385,12 @@ export default function MapEditorDashboard() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
+                                <button
+                                    onClick={() => setEditStore({ ...store })}
+                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
                                     <Pencil className="w-4 h-4" />
                                 </button>
-                                <button
-                                    onClick={() => setDeleteId(store.id)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                >
+                                <button onClick={() => setDeleteId(store.id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -459,7 +402,7 @@ export default function MapEditorDashboard() {
             {/* Add Store Modal */}
             {showAddStore && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-800">Add New Store</h3>
@@ -470,21 +413,14 @@ export default function MapEditorDashboard() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Store Name *</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Nike Store"
-                                    value={newStore.name}
+                                <input type="text" placeholder="e.g., Nike Store" value={newStore.name}
                                     onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]"
-                                />
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-                                <select
-                                    value={newStore.category}
-                                    onChange={(e) => setNewStore({ ...newStore, category: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] text-gray-500"
-                                >
+                                <select value={newStore.category} onChange={(e) => setNewStore({ ...newStore, category: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] text-gray-500">
                                     <option value="">Select category</option>
                                     <option value="Clothing">Clothing</option>
                                     <option value="Electronics">Electronics</option>
@@ -498,11 +434,8 @@ export default function MapEditorDashboard() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Floor *</label>
-                                <select
-                                    value={newStore.floor}
-                                    onChange={(e) => setNewStore({ ...newStore, floor: e.target.value })}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] text-gray-700"
-                                >
+                                <select value={newStore.floor} onChange={(e) => setNewStore({ ...newStore, floor: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] text-gray-700">
                                     <option value="LG">LG Floor</option>
                                     <option value="G">Ground Floor</option>
                                     <option value="1">Floor 1</option>
@@ -513,37 +446,47 @@ export default function MapEditorDashboard() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                                <textarea
-                                    placeholder="Brief description of the store..."
-                                    value={newStore.description}
+                                <textarea placeholder="Brief description of the store..." value={newStore.description}
                                     onChange={(e) => setNewStore({ ...newStore, description: e.target.value })}
-                                    rows={3}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] resize-none"
-                                />
+                                    rows={3} className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] resize-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Store Logo (Optional)</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0]
-                                        if (file) setNewStore({ ...newStore, logo: URL.createObjectURL(file) })
-                                    }}
-                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                                />
+                                <input type="file" accept="image/*"
+                                    onChange={(e) => { const file = e.target.files[0]; if (file) setNewStore({ ...newStore, logo: URL.createObjectURL(file) }) }}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                <input type="email" placeholder="store@example.com" value={newStore.email}
+                                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                                <input type="password" placeholder="••••••••" value={newStore.password}
+                                    onChange={(e) => setNewStore({ ...newStore, password: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                                <input type="password" placeholder="••••••••" value={newStore.confirmPassword}
+                                    onChange={(e) => setNewStore({ ...newStore, confirmPassword: e.target.value })}
+                                    className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] ${
+                                        newStore.confirmPassword && newStore.password !== newStore.confirmPassword
+                                            ? 'border-red-300 focus:ring-red-200' : 'border-gray-200 focus:border-[#ECDEAB]'
+                                    }`} />
+                                {newStore.confirmPassword && newStore.password !== newStore.confirmPassword && (
+                                    <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                                )}
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
-                            <button
-                                onClick={() => setShowAddStore(false)}
-                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => setShowAddStore(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
                             <button
                                 onClick={() => {
-                                    if (!newStore.name || !newStore.category) return
+                                    if (!newStore.name || !newStore.category || !newStore.email || !newStore.password) return
+                                    if (newStore.password !== newStore.confirmPassword) return
                                     setStores([...stores, {
                                         id: Date.now(),
                                         name: newStore.name,
@@ -552,8 +495,9 @@ export default function MapEditorDashboard() {
                                         icon: '🏪',
                                         logo: newStore.logo,
                                         description: newStore.description,
+                                        email: newStore.email,
                                     }])
-                                    setNewStore({ name: '', category: '', floor: 'G', description: '', logo: null })
+                                    setNewStore({ name: '', category: '', floor: 'G', description: '', logo: null, email: '', password: '', confirmPassword: '' })
                                     setShowAddStore(false)
                                 }}
                                 className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium"
@@ -565,37 +509,117 @@ export default function MapEditorDashboard() {
                 </div>
             )}
 
+            {/* Edit Store Modal */}
+            {editStore && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">Edit Store</h3>
+                                <p className="text-sm text-gray-400">Update store information</p>
+                            </div>
+                            <button onClick={() => setEditStore(null)} className="text-gray-400 hover:text-gray-700">✕</button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Store Name *</label>
+                                <input type="text" value={editStore.name}
+                                    onChange={(e) => setEditStore({ ...editStore, name: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] focus:border-[#ECDEAB]" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                                <select value={editStore.category}
+                                    onChange={(e) => setEditStore({ ...editStore, category: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]">
+                                    <option value="Clothing">Clothing</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Food">Food</option>
+                                    <option value="Books">Books</option>
+                                    <option value="Shoes">Shoes</option>
+                                    <option value="Beauty">Beauty</option>
+                                    <option value="Sports">Sports</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Floor *</label>
+                                <select value={editStore.floor}
+                                    onChange={(e) => setEditStore({ ...editStore, floor: e.target.value })}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB]">
+                                    <option value="LG">LG Floor</option>
+                                    <option value="G">Ground Floor</option>
+                                    <option value="1">Floor 1</option>
+                                    <option value="2">Floor 2</option>
+                                    <option value="3">Floor 3</option>
+                                    <option value="4">Floor 4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea value={editStore.description || ''}
+                                    onChange={(e) => setEditStore({ ...editStore, description: e.target.value })}
+                                    rows={3} className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] resize-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Store Logo</label>
+                                {editStore.logo && (
+                                    <img src={editStore.logo} alt="logo" className="w-12 h-12 rounded-full object-cover mb-2" />
+                                )}
+                                <input type="file" accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files[0]
+                                        if (file) setEditStore({ ...editStore, logo: URL.createObjectURL(file) })
+                                    }}
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+                                <p className="text-xs text-gray-400 mt-1">Upload a store logo (optional)</p>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center mt-6">
+                            <button
+                                onClick={() => { setDeleteId(editStore.id); setEditStore(null) }}
+                                className="flex items-center gap-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 text-sm rounded-lg font-medium"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Store
+                            </button>
+                            <div className="flex gap-3">
+                                <button onClick={() => setEditStore(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                                <button
+                                    onClick={() => {
+                                        if (!editStore.name || !editStore.category) return
+                                        setStores(stores.map(s => s.id === editStore.id ? editStore : s))
+                                        setEditStore(null)
+                                    }}
+                                    className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Assign Store Modal */}
             {pendingArea && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-sm">
                         <h3 className="text-lg font-bold text-gray-800 mb-1">Assign Store to Area</h3>
                         <p className="text-sm text-gray-400 mb-6">เลือกร้านค้าที่ต้องการผูกกับพื้นที่นี้</p>
-                        <select
-                            value={assignStore}
-                            onChange={(e) => setAssignStore(e.target.value)}
-                            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] mb-6"
-                        >
+                        <select value={assignStore} onChange={(e) => setAssignStore(e.target.value)}
+                            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ECDEAB] mb-6">
                             <option value="">Select a store...</option>
                             {stores.map((s) => (
                                 <option key={s.id} value={s.name}>{s.name} — Floor {s.floor}</option>
                             ))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => { setPendingArea(null); setAssignStore('') }}
-                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => { setPendingArea(null); setAssignStore('') }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
                             <button
                                 onClick={() => {
                                     if (!assignStore) return
-                                    setAreas([...areas, {
-                                        points: pendingArea,
-                                        storeName: assignStore,
-                                        floor: currentFloor
-                                    }])
+                                    setAreas([...areas, { points: pendingArea, storeName: assignStore, floor: currentFloor }])
                                     setPendingArea(null)
                                     setAssignStore('')
                                 }}
@@ -618,18 +642,8 @@ export default function MapEditorDashboard() {
                         <h3 className="text-lg font-bold text-gray-800 mb-2">Delete Store</h3>
                         <p className="text-sm text-gray-400 mb-6">Are you sure you want to delete this store? This action cannot be undone.</p>
                         <div className="flex justify-center gap-3">
-                            <button
-                                onClick={() => setDeleteId(null)}
-                                className="px-6 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium"
-                            >
-                                Delete
-                            </button>
+                            <button onClick={() => setDeleteId(null)} className="px-6 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg">Cancel</button>
+                            <button onClick={handleDelete} className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium">Delete</button>
                         </div>
                     </div>
                 </div>
