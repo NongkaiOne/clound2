@@ -20,6 +20,7 @@ from favorite_routes import favorite_bp
 from upload_routes import upload_bp
 from user_routes import user_bp
 from category_routes import category_bp
+from mall_routes import mall_bp
 
 def create_app():
     app = Flask(__name__)
@@ -44,6 +45,7 @@ def create_app():
     app.register_blueprint(upload_bp, url_prefix='/api/upload')
     app.register_blueprint(user_bp, url_prefix='/api/users')
     app.register_blueprint(category_bp, url_prefix='/api/categories')
+    app.register_blueprint(mall_bp, url_prefix='/api/malls')
 
     # ==========================================
     # Test Routes (สำหรับเช็คว่า Server ล่มไหม)
