@@ -10,11 +10,12 @@ mall_bp = Blueprint("mall_bp", __name__)
 # =========================
 def format_mall(m):
     return {
-        "id": m.get("id"),
-        "name": m.get("name"),
-        "location": m.get("location"),
-        "store_count": m.get("store_count", 0),
-        "is_popular": m.get("is_popular", 0)
+        "id": m.get("MallID"),
+        "name": m.get("MallName"),
+        "location": m.get("Location"),
+        "store_count": m.get("StoreCount", 0), # ดึงจากคอลัมน์ DB ตรงๆ เลย
+        "is_popular": m.get("IsPopular", 0),
+        "image": m.get("MallImageURL") # เผื่อ Front-end ต้องการใช้
     }
 
 
@@ -34,18 +35,17 @@ def get_malls():
 
         sql = """
             SELECT 
-                m.id,
-                m.name,
-                m.location,
-                m.is_popular,
-                (SELECT COUNT(*) 
-                 FROM Store s 
-                 WHERE s.mall_id = m.id) AS store_count
-            FROM Mall m
+                MallID,
+                MallName,
+                Location,
+                IsPopular,
+                StoreCount,
+                MallImageURL
+            FROM Mall
         """
 
         if search:
-            sql += " WHERE m.name LIKE %s OR m.location LIKE %s"
+            sql += " WHERE MallName LIKE %s OR Location LIKE %s"
             cursor.execute(sql, (f"%{search}%", f"%{search}%"))
         else:
             cursor.execute(sql)
@@ -86,13 +86,14 @@ def get_popular_malls():
 
         cursor.execute("""
             SELECT 
-                id,
-                name,
-                location,
-                is_popular,
-                0 AS store_count
+                MallID,
+                MallName,
+                Location,
+                IsPopular,
+                StoreCount,
+                MallImageURL
             FROM Mall
-            WHERE is_popular = 1
+            WHERE IsPopular = 1
         """)
 
         malls = cursor.fetchall()
@@ -129,15 +130,14 @@ def get_mall_by_id(mall_id):
 
         cursor.execute("""
             SELECT 
-                id,
-                name,
-                location,
-                is_popular,
-                (SELECT COUNT(*) 
-                 FROM Store s 
-                 WHERE s.mall_id = Mall.id) AS store_count
+                MallID,
+                MallName,
+                Location,
+                IsPopular,
+                StoreCount,
+                MallImageURL
             FROM Mall
-            WHERE id = %s
+            WHERE MallID = %s
         """, (mall_id,))
 
         mall = cursor.fetchone()

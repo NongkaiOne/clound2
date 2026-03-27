@@ -12,10 +12,10 @@ def format_floor(f):
         "id": f.get("FloorID"),
         "name": f.get("FloorName"),
         "mall_id": f.get("MallID"),
-        "map_image_url": f.get("MapImageURL"),
-        "store_count": f.get("store_count", 0)
+        "floor_code": f.get("FloorCode"), # ดึงเพิ่มจาก Schema ใหม่
+        "floor_order": f.get("FloorOrder"), # ดึงเพิ่มเผื่อ Front-end เอาไปจัดเรียง
+        "store_count": f.get("StoreCount", 0) # อิงชื่อให้ตรงกับ DB ใหม่
     }
-
 
 def format_store(s):
     return {
@@ -28,8 +28,8 @@ def format_store(s):
         },
         "logo": s.get("LogoURL"),
         "category": {
-            "name": s.get("CategoryName"),
-            "icon": s.get("CategoryIcon")
+            "name": s.get("StoreCategoryName"), # ดึงจาก Denormalized field ได้เลย
+            "icon": s.get("StoreCategoryIcon")  # ดึงจาก Denormalized field ได้เลย
         }
     }
 
@@ -48,20 +48,18 @@ def get_floors_by_mall(mall_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # อัปเดต SQL ดึงคอลัมน์ให้ตรง Schema
         sql = """
             SELECT 
-                f.FloorID,
-                f.FloorName,
-                f.MallID,
-                f.MapImageURL,
-                (
-                    SELECT COUNT(*) 
-                    FROM Store s 
-                    WHERE s.FloorID = f.FloorID
-                ) AS store_count
-            FROM Floor f
-            WHERE f.MallID = %s
-            ORDER BY f.FloorID ASC
+                FloorID,
+                FloorName,
+                FloorCode,
+                FloorOrder,
+                MallID,
+                StoreCount
+            FROM Floor
+            WHERE MallID = %s
+            ORDER BY FloorOrder ASC
         """
 
         cursor.execute(sql, (mall_id,))
@@ -75,6 +73,7 @@ def get_floors_by_mall(mall_id):
         }), 200
 
     except Exception as e:
+        print(f"🔥 ERROR GET FLOORS: {e}") # เพิ่มบรรทัดนี้
         return jsonify({
             "success": False,
             "message": str(e)
@@ -99,21 +98,21 @@ def get_stores_by_floor(floor_id):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
+        # เราเก็บ CategoryName กับ CategoryIcon ไว้ในตาราง Store 
+        # ดังนั้นไม่ต้อง JOIN ตาราง StoreCategory แล้ว ทำให้โหลดเร็วขึ้นด้วย
         sql = """
             SELECT 
-                s.StoreID,
-                s.StoreName,
-                s.FloorID,
-                s.PosX,
-                s.PosY,
-                s.LogoURL,
-                c.CategoryName,
-                c.IconURL AS CategoryIcon
-            FROM Store s
-            JOIN StoreCategory c 
-                ON s.StoreCategoryID = c.StoreCategoryID
-            WHERE s.FloorID = %s
-            ORDER BY s.StoreName ASC
+                StoreID,
+                StoreName,
+                FloorID,
+                PosX,
+                PosY,
+                LogoURL,
+                StoreCategoryName,
+                StoreCategoryIcon
+            FROM Store
+            WHERE FloorID = %s
+            ORDER BY StoreName ASC
         """
 
         cursor.execute(sql, (floor_id,))
