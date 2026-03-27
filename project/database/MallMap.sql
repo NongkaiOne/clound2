@@ -96,32 +96,51 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`Store` (
   `StoreID` INT NOT NULL AUTO_INCREMENT,
   `UserID` INT NOT NULL,
   `StoreName` VARCHAR(255) NOT NULL,
+  `StoreCategoryName` VARCHAR(255) NOT NULL,
+  `StoreCategoryIcon` VARCHAR(20) NOT NULL,
   `StoreCategoryID` INT NOT NULL,
   `Description` VARCHAR(255) NOT NULL,
   `LogoURL` VARCHAR(255) NOT NULL,
-  `FloorID` INT NOT NULL,
+
+  `MallID` INT NOT NULL,
+
+  `FloorName`VARCHAR(100) NOT NULL,
+  `FloorID`VARCHAR(30) NOT NULL,
   `PosX` FLOAT NOT NULL,
   `PosY` FLOAT NOT NULL,
+
   PRIMARY KEY (`StoreID`),
-  INDEX `fk_Store_StoreCategory1_idx` (`StoreCategoryID` ASC) VISIBLE,
-  INDEX `fk_Store_User1_idx` (`UserID` ASC) VISIBLE,
-  INDEX `fk_Store_floor1_idx` (`FloorID` ASC) VISIBLE,
-  CONSTRAINT `fk_Store_StoreCategory1`
-    FOREIGN KEY (`StoreCategoryID`)
-    REFERENCES `MallMAP`.`StoreCategory` (`StoreCategoryID`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+
+  INDEX `fk_Store_User1_idx` (`UserID` ASC),
+  INDEX `fk_Store_StoreCategory1_idx` (`StoreCategoryID` ASC),
+  INDEX `fk_Store_floor1_idx` (`FloorID` ASC),
+  INDEX `fk_Store_mall1_idx` (`MallID` ASC),
+
   CONSTRAINT `fk_Store_User1`
     FOREIGN KEY (`UserID`)
     REFERENCES `MallMAP`.`User` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+
+  CONSTRAINT `fk_Store_StoreCategory1`
+    FOREIGN KEY (`StoreCategoryID`)
+    REFERENCES `MallMAP`.`StoreCategory` (`StoreCategoryID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+
   CONSTRAINT `fk_Store_floor1`
     FOREIGN KEY (`FloorID`)
     REFERENCES `MallMAP`.`Floor` (`FloorID`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    ON UPDATE NO ACTION,
+
+  CONSTRAINT `fk_Store_Mall1`
+    FOREIGN KEY (`MallID`)
+    REFERENCES `MallMAP`.`Mall` (`MallID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+
+) ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------

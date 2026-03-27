@@ -3,103 +3,135 @@ from db import get_connection
 
 floor_bp = Blueprint('floor_bp', __name__)
 
+# ==========================================
+# FORMATTERS (แปลง DB → Frontend)
+# ==========================================
 
-# =========================
-# FORMATTER
-# =========================
 def format_floor(f):
     return {
-        "id": f.get("id"),
-        "mall_id": f.get("mall_id"),
-        "name": f.get("name"),
-        "floor_code": f.get("floor_code"),
-        "floor_order": f.get("floor_order"),
+        "id": f.get("FloorID"),
+        "name": f.get("FloorName"),
+        "mall_id": f.get("MallID"),
+        "map_image_url": f.get("MapImageURL"),
         "store_count": f.get("store_count", 0)
     }
 
 
 def format_store(s):
     return {
-        "id": s.get("id"),
-        "name": s.get("name"),
-        "floor_code": s.get("floor_code"),
+        "id": s.get("StoreID"),
+        "name": s.get("StoreName"),
+        "floor_id": s.get("FloorID"),
+        "position": {
+            "x": s.get("PosX"),
+            "y": s.get("PosY")
+        },
+        "logo": s.get("LogoURL"),
         "category": {
-            "name": s.get("category_name"),
-            "icon": s.get("category_icon")
+            "name": s.get("CategoryName"),
+            "icon": s.get("CategoryIcon")
         }
     }
 
 
-# =========================
-# ROUTES
-# =========================
+# ==========================================
+# 1. GET FLOORS BY MALL
+# GET /api/floors/mall/<mall_id>
+# ==========================================
 
-# 🏬 ดึงชั้นทั้งหมดใน mall
 @floor_bp.route('/mall/<int:mall_id>', methods=['GET'])
 def get_floors_by_mall(mall_id):
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    conn = None
+    cursor = None
 
-    sql = """
-        SELECT 
-            f.id,
-            f.mall_id,
-            f.name,
-            f.floor_code,
-            f.floor_order,
-            (SELECT COUNT(*) 
-             FROM Store s 
-             WHERE s.floor_id = f.id) AS store_count
-        FROM Floor f
-        WHERE f.mall_id = %s
-        ORDER BY f.floor_order ASC
-    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    cursor.execute(sql, (mall_id,))
-    floors = cursor.fetchall()
+        sql = """
+            SELECT 
+                f.FloorID,
+                f.FloorName,
+                f.MallID,
+                f.MapImageURL,
+                (
+                    SELECT COUNT(*) 
+                    FROM Store s 
+                    WHERE s.FloorID = f.FloorID
+                ) AS store_count
+            FROM Floor f
+            WHERE f.MallID = %s
+            ORDER BY f.FloorID ASC
+        """
 
-    cursor.close()
-    conn.close()
+        cursor.execute(sql, (mall_id,))
+        floors = cursor.fetchall()
 
-    # 🔥 ใช้ formatter
-    formatted_floors = [format_floor(f) for f in floors]
+        formatted = [format_floor(f) for f in floors]
 
-    return jsonify({
-        "success": True,
-        "data": formatted_floors
-    })
+        return jsonify({
+            "success": True,
+            "data": formatted
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 
-# 🛍️ ดึงร้านค้าตามชั้น
+# ==========================================
+# 2. GET STORES BY FLOOR
+# GET /api/floors/<floor_id>/stores
+# ==========================================
+
 @floor_bp.route('/<int:floor_id>/stores', methods=['GET'])
 def get_stores_by_floor(floor_id):
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    conn = None
+    cursor = None
 
-    sql = """
-        SELECT 
-            s.id,
-            s.name,
-            f.floor_code,
-            c.name AS category_name,
-            c.icon AS category_icon
-        FROM Store s
-        JOIN StoreCategory c ON s.category_id = c.id
-        JOIN Floor f ON s.floor_id = f.id
-        WHERE s.floor_id = %s
-        ORDER BY s.name ASC
-    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    cursor.execute(sql, (floor_id,))
-    stores = cursor.fetchall()
+        sql = """
+            SELECT 
+                s.StoreID,
+                s.StoreName,
+                s.FloorID,
+                s.PosX,
+                s.PosY,
+                s.LogoURL,
+                c.CategoryName,
+                c.IconURL AS CategoryIcon
+            FROM Store s
+            JOIN StoreCategory c 
+                ON s.StoreCategoryID = c.StoreCategoryID
+            WHERE s.FloorID = %s
+            ORDER BY s.StoreName ASC
+        """
 
-    cursor.close()
-    conn.close()
+        cursor.execute(sql, (floor_id,))
+        stores = cursor.fetchall()
 
-    # 🔥 ใช้ formatter
-    formatted_stores = [format_store(s) for s in stores]
+        formatted = [format_store(s) for s in stores]
 
-    return jsonify({
-        "success": True,
-        "data": formatted_stores
-    })
+        return jsonify({
+            "success": True,
+            "data": formatted
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()

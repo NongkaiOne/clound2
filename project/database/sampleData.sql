@@ -35,7 +35,8 @@ INSERT INTO mallmap.floor (FloorName, MallID, MapImageURL)
 VALUES ('Floor 1', 1, 'map1.png');
 
 INSERT INTO mallmap.Store
-(UserID, StoreName, StoreCategoryID, Phone, LogoURL, FloorID, PosX, PosY)
+(StoreID, FloorID, MallID,StoreName,Description,StoreCategoryName,StoreCategoryIcon,FloorName,FloorID, PosX, PosY, StoreCategoryID, UserID, LogoURL)
 VALUES
-(2, 'Yamazaki', 1, '0912345678', 'http://example.com/logoA.png', 1, 10.5, 20.5),
-(2, 'ElectroWorld', 3, '0987654321', 'http://example.com/logoB.png', 1, 15.0, 25.0);
+(1, 1, 1, 'Store 1', 'Description 1', 'Food', 'food-icon.png', 'Floor 1', '1', 100.0, 200.0, 1, 2, 'logo1.png'),
+(2, 1, 1, 'Store 2', 'Description 2', 'Fashion', 'fashion-icon.png', 'Floor 1', '1', 150.0, 250.0, 2, 2, 'logo2.png'),
+(3, 1, 1, 'Store 3', 'Description 3', 'Electronics', 'electronics-icon.png', 'Floor 1', '1', 200.0, 300.0, 3, 2, 'logo3.png');
