@@ -115,8 +115,8 @@ def add_product(current_user):
         conn = get_connection()
         cursor = conn.cursor()
         
-        sql = "INSERT INTO Product (ProductName, Price, StockQuantity, ProductImage, StoreID) VALUES (%s, %s, %s, %s, %s)"
-        params = (data.get('ProductName'), data.get('Price'), data.get('StockQuantity', 0), data.get('ProductImage'), store_id)
+        sql = "INSERT INTO Product (ProductName, Price, StockQuantity, ProductImageURL, StoreID, CategoryID) VALUES (%s, %s, %s, %s, %s, %s)"
+        params = (data.get('ProductName'), data.get('Price'), data.get('StockQuantity', 0), data.get('ProductImage'), store_id, data.get('CategoryID', 1))
         
         cursor.execute(sql, params)
         conn.commit()
@@ -152,10 +152,10 @@ def update_product(current_user, product_id):
             
         update_fields = []
         params = []
-        for key in ['ProductName', 'Price', 'StockQuantity', 'ProductImage']:
+        for key in ['ProductName', 'Price', 'StockQuantity', 'ProductImageURL']:
             if key in data:
                 update_fields.append(f"{key} = %s")
-                params.append(data[key])
+                params.append(data[key] if key != 'ProductImage' else data.get('ProductImage'))
         
         if not update_fields:
             return jsonify({"success": False, "message": "No valid fields to update"}), 400

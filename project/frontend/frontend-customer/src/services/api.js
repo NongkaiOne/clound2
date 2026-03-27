@@ -22,7 +22,11 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 // Axios instance — ใช้เมื่อ USE_MOCK = false
 // แนบ JWT Token อัตโนมัติทุก Request
 // --------------------------------------------------
-const http = axios.create({ baseURL: BASE_URL, timeout: 10000 });
+const http = axios.create({ 
+  baseURL: BASE_URL, 
+  timeout: 10000,
+  headers: { 'ngrok-skip-browser-warning': 'true' } // <--- เพิ่มบรรทัดนี้
+});
 
 // แนบ Token ก่อนส่ง Request ทุกครั้ง
 http.interceptors.request.use((config) => {

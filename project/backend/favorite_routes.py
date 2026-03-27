@@ -26,10 +26,10 @@ def get_favorite_stores(current_user):
         cursor = conn.cursor(dictionary=True)
 
         sql = """
-            SELECT s.StoreID, s.StoreName, s.LogoURL, c.CategoryName
+            SELECT s.StoreID, s.StoreName, s.LogoURL, c.StoreCategoryName as CategoryName
             FROM FavoriteStore fs
             JOIN Store s ON fs.StoreID = s.StoreID
-            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.CategoryID
+            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.StoreCategoryID
             WHERE fs.UserID = %s
         """
         cursor.execute(sql, (user_id,))

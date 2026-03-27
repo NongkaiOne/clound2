@@ -9,7 +9,7 @@ def get_connection():
     """
     try:
         conn = mysql.connector.connect(
-            host=os.environ.get('DB_HOST', '192.168.3.38'),
+            host=os.environ.get('DB_HOST', '127.0.0.1'),
             user=os.environ.get('DB_USER', 'root'),
             password=os.environ.get('DB_PASSWORD', '123456'),
             database=os.environ.get('DB_NAME', 'mallmap')
