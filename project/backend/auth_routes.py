@@ -77,11 +77,11 @@ def register_user():
         cursor = conn.cursor()
         
         # Check if username or email already exists
-        cursor.execute("SELECT UserID FROM User WHERE UserName = %s OR Email = %s", (username, email))
+        cursor.execute("SELECT UserID FROM `User` WHERE UserName = %s OR Email = %s", (username, email))
         if cursor.fetchone():
             return jsonify({"status": "error", "message": "Username or Email already exists"}), 409
 
-        sql = "INSERT INTO User (UserName, Email, PasswordHash, RoleID) VALUES (%s, %s, %s, %s)"
+        sql = "INSERT INTO `User` (UserName, Email, PasswordHash, RoleID) VALUES (%s, %s, %s, %s)"
         cursor.execute(sql, (username, email, hashed_password.decode('utf-8'), role_id))
         conn.commit()
         
@@ -122,7 +122,7 @@ def login():
         # --- SRS Compliance: Fetch StoreID for StoreOwners, login via Email ---
         sql = """
             SELECT u.UserID, u.UserName, u.Email, u.PasswordHash, u.StoreID, r.RoleName
-            FROM User u
+            FROM `User` u
             JOIN Role r ON u.RoleID = r.RoleID
             WHERE u.Email = %s
         """
@@ -162,6 +162,7 @@ def login():
                 "user": user_response
             })
         else:
+            log.warning(f"Login failed: Incorrect password for user {email}")
             return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
     except Exception as e:
@@ -193,7 +194,7 @@ def get_profile(current_user):
         # Fetch user details from the database
         sql = """
             SELECT u.UserID as id, u.UserName as username, u.Email as email, r.RoleName as role, u.StoreID as store_id
-            FROM User u
+            FROM `User` u
             JOIN Role r ON u.RoleID = r.RoleID
             WHERE u.UserID = %s
         """

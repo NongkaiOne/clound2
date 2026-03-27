@@ -22,7 +22,7 @@ def get_stores_by_mall(mall_id):
         # This assumes the Floor table has a MallID. We join through Floor to get to Mall.
         # This provides a basic list of stores in the mall.
         sql = """
-            SELECT s.StoreID, s.StoreName, s.LogoURL, s.FloorID
+            SELECT s.StoreID, s.StoreName, s.LogoURL, s.FloorID, s.PosX, s.PosY
             FROM Store s
             JOIN Floor f ON s.FloorID = f.FloorID
             WHERE f.MallID = %s
@@ -62,10 +62,10 @@ def search_stores():
 
         # Joins with Floor to filter by mall, and with Category to search by category name.
         sql = """
-            SELECT s.StoreID, s.StoreName, s.LogoURL, c.CategoryName
+            SELECT s.StoreID, s.StoreName, s.LogoURL, s.PosX, s.PosY, c.StoreCategoryName as CategoryName
             FROM Store s
             JOIN Floor f ON s.FloorID = f.FloorID
-            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.CategoryID
+            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.StoreCategoryID
             WHERE f.MallID = %s AND (s.StoreName LIKE %s OR c.CategoryName LIKE %s)
         """
         params = (mall_id, f"%{query}%", f"%{query}%")
@@ -97,10 +97,10 @@ def get_store_by_id(store_id):
         cursor = conn.cursor(dictionary=True)
         # This query joins multiple tables to provide comprehensive details for the store page.
         sql = """
-            SELECT s.StoreID, s.StoreName, s.Phone, s.LogoURL, s.OpeningHours, 
-                   c.CategoryName, f.FloorName, m.MallName
+            SELECT s.StoreID, s.StoreName, s.Phone, s.LogoURL, s.OpeningHours, s.PosX, s.PosY,
+                   c.StoreCategoryName as CategoryName, f.FloorName, m.Mallname as MallName
             FROM Store s
-            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.CategoryID
+            LEFT JOIN StoreCategory c ON s.StoreCategoryID = c.StoreCategoryID
             LEFT JOIN Floor f ON s.FloorID = f.FloorID
             LEFT JOIN Mall m ON f.MallID = m.MallID
             WHERE s.StoreID = %s

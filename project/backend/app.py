@@ -31,8 +31,11 @@ def create_app():
     # ==========================================
     # ต้องตั้งให้ตรงกับค่าในไฟล์ auth ที่ใช้ทำ JWT Token
     app.config['SECRET_KEY'] = 'mysecret' 
-    # เปิด CORS เพื่อให้ Frontend ยิง API เข้ามาได้โดยไม่ติด Block
-    CORS(app) 
+    
+    # เปิด CORS แบบเจาะจงเพื่อให้รองรับ Header ของ Ngrok และการส่ง Token
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, 
+         allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
+         supports_credentials=True)
 
     # ==========================================
     # Register Blueprints (ลงทะเบียน Routes)
@@ -59,9 +62,13 @@ def create_app():
     @app.route('/testdb')
     def testdb():
         try:
+            import os
             conn = get_connection()
             conn.close()
-            return jsonify({"status": "ok", "message": "Database Connected"})
+            return jsonify({
+                "status": "ok", 
+                "message": f"Connected to {os.environ.get('DB_NAME', 'mallmap')} at {os.environ.get('DB_HOST', '127.0.0.1')}"
+            })
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)})
 
