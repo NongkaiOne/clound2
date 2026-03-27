@@ -1,112 +1,148 @@
 from flask import Blueprint, jsonify, request
 from db import get_connection
 from logger import log
-from auth_routes import token_required # Import token_required for user-specific data
 
-mall_bp = Blueprint("mall_bp", __name__) # Renamed to mall_bp for consistency
+mall_bp = Blueprint("mall_bp", __name__)
 
 # ==========================================
-# 1. Get All Malls (with Search)
+# Helper: แปลง DB → Frontend format
 # ==========================================
+def format_mall(m):
+    return {
+        "id": m.get("MallID"),
+        "name": m.get("MallName"),
+        "location": m.get("Location"),
+        "store_count": m.get("StoreCount", 0),  # กัน null
+        "is_popular": m.get("IsPopular", 0)
+    }
+
+# ==========================================
+# 1. Get All Malls (รองรับ search)
+# GET /api/malls?search=xxx
+# ==========================================
+@mall_bp.route('', methods=['GET'])
 @mall_bp.route('/', methods=['GET'])
 def get_malls():
-    """
-    Gets all malls, with an option to search by name or location.
-    Matches frontend API: mallAPI.getAll(search)
-    """
     conn = None
     cursor = None
     try:
-        search_query = request.args.get('search', '') # Get search parameter
+        search = request.args.get('search', '')
+
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
 
-        if search_query:
-            # --- API Compliance: Add search functionality ---
-            sql = "SELECT * FROM Mall WHERE MallName LIKE %s OR Location LIKE %s"
-            params = (f"%{search_query}%", f"%{search_query}%")
+        if search:
+            sql = """
+                SELECT * FROM Mall
+                WHERE MallName LIKE %s OR Location LIKE %s
+            """
+            params = (f"%{search}%", f"%{search}%")
             cursor.execute(sql, params)
         else:
             cursor.execute("SELECT * FROM Mall")
 
         malls = cursor.fetchall()
-        log.info(f"Fetched {len(malls)} malls with search term: '{search_query}'")
-        # --- API Compliance: Return { success: true, data: ... } ---
-        return jsonify({"success": True, "data": malls}), 200
+        formatted = [format_mall(m) for m in malls]
+
+        log.info(f"Fetched {len(formatted)} malls")
+
+        return jsonify({
+            "success": True,
+            "data": formatted
+        }), 200
+
     except Exception as e:
-        log.error(f"ERROR FETCHING MALLS: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        log.error(f"ERROR GET MALLS: {e}")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
 
 # ==========================================
 # 2. Get Popular Malls
+# GET /api/malls/popular
 # ==========================================
 @mall_bp.route('/popular', methods=['GET'])
 def get_popular_malls():
-    """
-    Gets all malls marked as 'popular'.
-    Matches frontend API: mallAPI.getPopular()
-    """
     conn = None
     cursor = None
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
-        # --- API Compliance: Assumes 'IsPopular' column exists based on frontend mock ---
+
         cursor.execute("SELECT * FROM Mall WHERE IsPopular = 1")
         malls = cursor.fetchall()
-        log.info(f"Fetched {len(malls)} popular malls.")
-        return jsonify({"success": True, "data": malls}), 200
+
+        formatted = [format_mall(m) for m in malls]
+
+        return jsonify({
+            "success": True,
+            "data": formatted
+        }), 200
+
     except Exception as e:
-        log.error(f"ERROR FETCHING POPULAR MALLS: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        log.error(f"ERROR GET POPULAR MALLS: {e}")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
 
+
 # ==========================================
-# 3. Get Recent Malls (Placeholder)
+# 3. Get Recent Malls (ยังไม่ใช้ token)
+# GET /api/malls/recent
 # ==========================================
 @mall_bp.route('/recent', methods=['GET'])
-@token_required(allowed_roles=['Customer']) # Recent malls are user-specific
-def get_recent_malls(current_user):
-    """
-    Gets malls recently visited by the user.
-    Matches frontend API: mallAPI.getRecent()
-    NOTE: This is a placeholder and requires a user history tracking implementation.
-    """
-    user_id = current_user.get('user_id')
-    # TODO: Implement logic to fetch recent malls for the given user_id.
-    # For now, returning an empty list to satisfy the API contract.
-    log.warning(f"Accessed /recent endpoint for user_id {user_id}, which is not fully implemented.")
-    return jsonify({"success": True, "data": []}), 200
+def get_recent_malls():
+    # 🔥 ตอนนี้ยังไม่ทำ logic จริง → return ว่าง
+    return jsonify({
+        "success": True,
+        "data": []
+    }), 200
+
 
 # ==========================================
 # 4. Get Mall by ID
+# GET /api/malls/<id>
 # ==========================================
 @mall_bp.route('/<int:mall_id>', methods=['GET'])
 def get_mall_by_id(mall_id):
-    """
-    Gets a single mall by its ID.
-    Matches frontend API: mallAPI.getById(id)
-    """
     conn = None
     cursor = None
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+
         cursor.execute("SELECT * FROM Mall WHERE MallID = %s", (mall_id,))
         mall = cursor.fetchone()
-        if mall:
-            log.info(f"Fetched details for MallID: {mall_id}")
-            return jsonify({"success": True, "data": mall}), 200
-        else:
-            return jsonify({"success": False, "message": "Mall not found"}), 404
+
+        if not mall:
+            return jsonify({
+                "success": False,
+                "message": "Mall not found"
+            }), 404
+
+        return jsonify({
+            "success": True,
+            "data": format_mall(mall)
+        }), 200
+
     except Exception as e:
-        log.error(f"ERROR FETCHING MALL BY ID {mall_id}: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        log.error(f"ERROR GET MALL BY ID {mall_id}: {e}")
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
+
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
