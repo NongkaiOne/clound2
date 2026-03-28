@@ -145,22 +145,21 @@ def get_stores_by_mall(mall_id):
 
     sql = """
         SELECT 
-            s.id,
-            s.floor_id,
-            s.mall_id,
-            s.name,
-            s.description,
-            s.pos_x AS map_x,
-            s.pos_y AS map_y,
-            c.name AS category_name,
-            c.icon AS category_icon,
-            f.name AS floor_name,
-            f.floor_code
+            s.StoreID AS id,
+            s.FloorID AS floor_id,
+            s.MallID AS mall_id,
+            s.StoreName AS name,
+            s.Description AS description,
+            s.PosX AS map_x,
+            s.PosY AS map_y,
+            s.StoreCategoryName AS category_name,
+            s.StoreCategoryIcon AS category_icon,
+            f.FloorName AS floor_name,
+            f.FloorCode AS floor_code
         FROM Store s
-        JOIN StoreCategory c ON s.category_id = c.id
-        JOIN Floor f ON s.floor_id = f.id
-        WHERE s.mall_id = %s
-        ORDER BY s.name ASC
+        JOIN Floor f ON s.FloorID = f.FloorID
+        WHERE s.MallID = %s
+        ORDER BY s.StoreName ASC
     """
 
     cursor.execute(sql, (mall_id,))
@@ -194,23 +193,22 @@ def search_stores():
 
     sql = """
         SELECT 
-            s.id,
-            s.floor_id,
-            s.mall_id,
-            s.name,
-            s.description,
-            s.pos_x AS map_x,
-            s.pos_y AS map_y,
-            c.name AS category_name,
-            c.icon AS category_icon,
-            f.name AS floor_name,
-            f.floor_code
+            s.StoreID AS id,
+            s.FloorID AS floor_id,
+            s.MallID AS mall_id,
+            s.StoreName AS name,
+            s.Description AS description,
+            s.PosX AS map_x,
+            s.PosY AS map_y,
+            s.StoreCategoryName AS category_name,
+            s.StoreCategoryIcon AS category_icon,
+            f.FloorName AS floor_name,
+            f.FloorCode AS floor_code
         FROM Store s
-        JOIN StoreCategory c ON s.category_id = c.id
-        JOIN Floor f ON s.floor_id = f.id
-        WHERE s.mall_id = %s 
-          AND (s.name LIKE %s OR c.name LIKE %s)
-        ORDER BY s.name ASC
+        JOIN Floor f ON s.FloorID = f.FloorID
+        WHERE s.MallID = %s 
+          AND (s.StoreName LIKE %s OR s.StoreCategoryName LIKE %s)
+        ORDER BY s.StoreName ASC
     """
 
     search_param = f"%{query}%"
@@ -237,21 +235,20 @@ def get_store_by_id(store_id):
 
     sql = """
         SELECT 
-            s.id,
-            s.floor_id,
-            s.mall_id,
-            s.name,
-            s.description,
-            s.pos_x AS map_x,
-            s.pos_y AS map_y,
-            c.name AS category_name,
-            c.icon AS category_icon,
-            f.name AS floor_name,
-            f.floor_code
+            s.StoreID AS id,
+            s.FloorID AS floor_id,
+            s.MallID AS mall_id,
+            s.StoreName AS name,
+            s.Description AS description,
+            s.PosX AS map_x,
+            s.PosY AS map_y,
+            s.StoreCategoryName AS category_name,
+            s.StoreCategoryIcon AS category_icon,
+            f.FloorName AS floor_name,
+            f.FloorCode AS floor_code
         FROM Store s
-        JOIN StoreCategory c ON s.category_id = c.id
-        JOIN Floor f ON s.floor_id = f.id
-        WHERE s.id = %s
+        JOIN Floor f ON s.FloorID = f.FloorID
+        WHERE s.StoreID = %s
     """
 
     cursor.execute(sql, (store_id,))
