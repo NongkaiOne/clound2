@@ -67,9 +67,8 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`Mall` (
   `MallID` INT NOT NULL AUTO_INCREMENT,
   `MallName` VARCHAR(255) NOT NULL,
   `Location` VARCHAR(255) NOT NULL,
-  `StoreCount` INT NOT NULL DEFAULT 0,
   `IsPopular` TINYINT(1) NOT NULL DEFAULT 0,
-  `MallImageURL` VARCHAR(255) NULL,
+  `MallImageURL` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`MallID`)
 ) ENGINE = InnoDB;
 
@@ -101,15 +100,15 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`Store` (
   `StoreID` INT NOT NULL AUTO_INCREMENT,
   `UserID` INT NOT NULL,
   `StoreName` VARCHAR(255) NOT NULL,
-  `StoreCategoryName` VARCHAR(255) NULL, -- Denormalized field
-  `StoreCategoryIcon` VARCHAR(20) NULL,  -- Denormalized field
+  `StoreCategoryName` VARCHAR(255) NOT NULL, -- Denormalized field
+  `StoreCategoryIcon` VARCHAR(20) NOT NULL,  -- Denormalized field
   `StoreCategoryID` INT NOT NULL,
-  `Description` VARCHAR(255) NULL,
-  `Phone` VARCHAR(20) NULL,
-  `OpeningHours` VARCHAR(255) NULL,
-  `LogoURL` VARCHAR(255) NULL,
+  `Description` VARCHAR(255) NOT NULL,
+  `Phone` VARCHAR(20) NOT NULL,
+  `OpeningHours` VARCHAR(255) NOT NULL,
+  `LogoURL` VARCHAR(255) NOT NULL,
   `MallID` INT NOT NULL,
-  `FloorName` VARCHAR(100) NULL, -- Denormalized field
+  `FloorName` VARCHAR(100) NOT NULL, -- Denormalized field
   `FloorID` INT NOT NULL,
   `PosX` FLOAT NOT NULL DEFAULT 0,
   `PosY` FLOAT NOT NULL DEFAULT 0,
@@ -159,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`Product` (
   `ProductName` VARCHAR(255) NOT NULL,
   `Price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `StockQuantity` INT NOT NULL DEFAULT 0,
-  `ProductImageURL` VARCHAR(255) NULL,
+  `ProductImageURL` VARCHAR(255) NOT NULL,
   `StoreID` INT NOT NULL,
   `CategoryID` INT NOT NULL,
   `IsActive` TINYINT(1) NOT NULL DEFAULT 1,
@@ -201,6 +200,7 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`FavoriteStore` (
     ON DELETE CASCADE
     ON UPDATE NO ACTION
 ) ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------

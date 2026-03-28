@@ -27,8 +27,28 @@ SET FOREIGN_KEY_CHECKS = 1;
 INSERT INTO MallMAP.Role (RoleName)
 VALUES ('admin'), ('seller'), ('user');
 
-INSERT INTO `Mall` (`MallName`, `Location`, `StoreCount`, `IsPopular`) VALUES 
-('Central Mall', 'Bangkok', 3, 1);
+-- -----------------------------------------------------
+-- 2. Insert Users (Password: 123456)
+-- -----------------------------------------------------
+INSERT INTO `User` (`UserName`, `Email`, `PasswordHash`, `RoleID`, `CreatedAt`, `UpdatedAt`, `StoreID`) VALUES
+('admin1', 'admin1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 1, NOW(), NOW(), NULL),
+('storeOwner1', 'owner1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 2, NOW(), NOW(), 1),
+('customer1', 'customer1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 3, NOW(), NOW(), NULL);
+
+-- -----------------------------------------------------
+-- 3. Insert Store Categories
+-- -----------------------------------------------------
+INSERT INTO `StoreCategory` (`StoreCategoryName`) VALUES
+('Food'),
+('Fashion'),
+('Electronics');
+
+-- -----------------------------------------------------
+-- 4. Insert Mall
+-- -----------------------------------------------------
+INSERT INTO `Mall` (`MallName`, `Location`, `IsPopular`, `MallImageURL`) 
+VALUES 
+('Central Mall', 'Bangkok', 1, 'https://example.com/mall.jpg');
 
 INSERT INTO MallMAP.Floor (FloorName, MallID, FloorCode, FloorOrder)
 VALUES
