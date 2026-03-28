@@ -3,8 +3,9 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from functools import wraps
+import psycopg2.extras
 from db import get_connection
-from logger import log # Import the logger
+from logger import log
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -12,9 +13,6 @@ auth_bp = Blueprint('auth_bp', __name__)
 # 1. Decorator for Token and Role Verification
 # ==========================================
 def token_required(allowed_roles):
-    """
-    Decorator to protect routes by verifying a JWT token and user roles.
-    """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -27,15 +25,12 @@ def token_required(allowed_roles):
                 return jsonify({'message': 'Token is missing!'}), 401
 
             try:
-                # Decode the token using the app's secret key
                 data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
                 current_user_role = data.get('role')
 
-                # Check if the user's role is allowed to access the route
                 if current_user_role not in allowed_roles:
                     return jsonify({'message': f'Access denied. Requires one of these roles: {", ".join(allowed_roles)}'}), 403
-                
-                # Pass the decoded token data to the decorated function
+
                 return f(data, *args, **kwargs)
 
             except jwt.ExpiredSignatureError:
@@ -46,47 +41,38 @@ def token_required(allowed_roles):
     return decorator
 
 # ==========================================
-# 2. User Registration Route
+# 2. Register
 # ==========================================
 @auth_bp.route('/register', methods=['POST'])
 def register_user():
-    """
-    Registers a new user. For security, registration is restricted to the 'Customer' role by default.
-    Admin and StoreOwner accounts should be created via a separate, secure process.
-    """
     conn = None
     cursor = None
     try:
         data = request.get_json()
-        # --- API Compliance: Use 'username', 'email', 'password' from frontend ---
         if not data or not data.get('username') or not data.get('password') or not data.get('email'):
             return jsonify({"status": "error", "message": "Username, Email, and Password are required"}), 400
 
         username = data.get('username')
         email = data.get('email')
         password = data.get('password').encode('utf-8')
-        
-        # --- Security Improvement: Default role is 'Customer' ---
-        # Assuming RoleID for 'Customer' is 3. This prevents users from self-assigning 'Admin' roles.
-        role_id = 3 
+        role_id = 3
 
-        # Hash the password using bcrypt
         hashed_password = bcrypt.hashpw(password, bcrypt.gensalt())
 
         conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Check if username or email already exists
-        cursor.execute("SELECT id FROM `User` WHERE username = %s OR email = %s", (username, email))
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute('SELECT id FROM "User" WHERE username = %s OR email = %s', (username, email))
         if cursor.fetchone():
             return jsonify({"status": "error", "message": "Username or Email already exists"}), 409
 
-        sql = "INSERT INTO `User` (username, email, password_hash, role_id) VALUES (%s, %s, %s, %s)"
-        cursor.execute(sql, (username, email, hashed_password.decode('utf-8'), role_id))
+        cursor.execute(
+            'INSERT INTO "User" (username, email, password_hash, role_id) VALUES (%s, %s, %s, %s)',
+            (username, email, hashed_password.decode('utf-8'), role_id)
+        )
         conn.commit()
-        
+
         log.info(f"New user registered: {username}")
-        # --- API Compliance: Return success status and message ---
         return jsonify({"success": True, "message": "User registered successfully as Customer"}), 201
 
     except Exception as e:
@@ -97,19 +83,14 @@ def register_user():
         if conn: conn.close()
 
 # ==========================================
-# 3. User Login Route
+# 3. Login
 # ==========================================
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """
-    Authenticates a user and returns a JWT token if successful.
-    For StoreOwners, the token will include their StoreID.
-    """
     conn = None
     cursor = None
     try:
         data = request.get_json()
-        # --- API Compliance: Use 'email' and 'password' from frontend ---
         if not data or not data.get('email') or not data.get('password'):
             return jsonify({"status": "error", "message": "Missing email or password"}), 400
 
@@ -117,12 +98,11 @@ def login():
         password = data.get('password').encode('utf-8')
 
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # --- SRS Compliance: Fetch StoreID for StoreOwners, login via Email ---
         sql = """
             SELECT u.id, u.username, u.email, u.password_hash, u.store_id, r.role_name
-            FROM `User` u
+            FROM "User" u
             JOIN Role r ON u.role_id = r.role_id
             WHERE u.email = %s
         """
@@ -130,19 +110,16 @@ def login():
         user = cursor.fetchone()
 
         if user and bcrypt.checkpw(password, user['password_hash'].encode('utf-8')):
-            
-            # --- SRS Compliance: Add StoreID to JWT payload for StoreOwners ---
             payload = {
                 'user_id': user['id'],
                 'role': user['role_name'],
-                'exp': datetime.utcnow() + timedelta(hours=24) # Token expires in 24 hours
+                'exp': datetime.utcnow() + timedelta(hours=24)
             }
             if user['role_name'] == 'StoreOwner' and user['store_id']:
                 payload['store_id'] = user['store_id']
 
             token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
-            # --- API Compliance: Prepare user data for the response matching frontend ---
             user_response = {
                 "id": user['id'],
                 "username": user['username'],
@@ -152,9 +129,7 @@ def login():
             if user['role_name'] == 'StoreOwner':
                 user_response['store_id'] = user['store_id']
 
-            log.info(f"User '{user['username']}' logged in successfully as '{user['role_name']}'.")
-
-            # --- API Compliance: Return response structure matching frontend ---
+            log.info(f"User '{user['username']}' logged in as '{user['role_name']}'.")
             return jsonify({
                 "success": True,
                 "message": "Login successful",
@@ -162,7 +137,7 @@ def login():
                 "user": user_response
             })
         else:
-            log.warning(f"Login failed: Incorrect password for user {email}")
+            log.warning(f"Login failed for: {email}")
             return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
     except Exception as e:
@@ -173,14 +148,11 @@ def login():
         if conn: conn.close()
 
 # ==========================================
-# 4. Get User Profile Route
+# 4. Profile
 # ==========================================
 @auth_bp.route('/profile', methods=['GET'])
 @token_required(allowed_roles=['Admin', 'StoreOwner', 'Customer'])
 def get_profile(current_user):
-    """
-    Retrieves the profile of the currently logged-in user using their token.
-    """
     conn = None
     cursor = None
     try:
@@ -189,12 +161,11 @@ def get_profile(current_user):
             return jsonify({"status": "error", "message": "Invalid token data"}), 400
 
         conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # Fetch user details from the database
         sql = """
             SELECT u.id, u.username, u.email, r.role_name as role, u.store_id
-            FROM `User` u
+            FROM "User" u
             JOIN Role r ON u.role_id = r.role_id
             WHERE u.id = %s
         """
@@ -204,9 +175,7 @@ def get_profile(current_user):
         if not user:
             return jsonify({"success": False, "message": "User not found"}), 404
 
-        log.info(f"Fetched profile for user_id: {user_id}")
-        # --- API Compliance: Return user object as 'user' ---
-        return jsonify({"success": True, "user": user})
+        return jsonify({"success": True, "user": dict(user)})
 
     except Exception as e:
         log.error(f"ERROR FETCHING PROFILE: {e}")
