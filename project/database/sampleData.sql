@@ -48,8 +48,9 @@ INSERT INTO `StoreCategory` (`StoreCategoryName`) VALUES
 -- -----------------------------------------------------
 -- 4. Insert Mall
 -- -----------------------------------------------------
-INSERT INTO `Mall` (`MallName`, `Location`, `IsPopular`ม`MallImageURL`) VALUES 
-('Central Mall', 'Bangkok', 1, NULL);
+INSERT INTO `Mall` (`MallName`, `Location`, `IsPopular`, `MallImageURL`) 
+VALUES 
+('Central Mall', 'Bangkok', 1, 'https://example.com/mall.jpg');
 
 -- -----------------------------------------------------
 -- 5. Insert Floor
