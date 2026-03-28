@@ -104,12 +104,12 @@ CREATE TABLE IF NOT EXISTS `MallMAP`.`Store` (
   `StoreCategoryName` VARCHAR(255) NULL, -- Denormalized field
   `StoreCategoryIcon` VARCHAR(20) NULL,  -- Denormalized field
   `StoreCategoryID` INT NOT NULL,
-  `Description` VARCHAR(255) NULL,
-  `Phone` VARCHAR(20) NULL,
-  `OpeningHours` VARCHAR(255) NULL,
-  `LogoURL` VARCHAR(255) NULL,
+  `Description` VARCHAR(255) NOT NULL,
+  `Phone` VARCHAR(20) NOT NULL,
+  `OpeningHours` VARCHAR(255) NOT NULL,
+  `LogoURL` VARCHAR(255) NOT NULL,
   `MallID` INT NOT NULL,
-  `FloorName` VARCHAR(100) NULL, -- Denormalized field
+  `FloorName` VARCHAR(100) NOT NULL, -- Denormalized field
   `FloorID` INT NOT NULL,
   `PosX` FLOAT NOT NULL DEFAULT 0,
   `PosY` FLOAT NOT NULL DEFAULT 0,
