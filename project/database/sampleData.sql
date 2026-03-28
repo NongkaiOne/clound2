@@ -32,10 +32,10 @@ INSERT INTO `Role` (`RoleName`) VALUES
 -- -----------------------------------------------------
 -- 2. Insert Users (Password: 123456)
 -- -----------------------------------------------------
-INSERT INTO `User` (`UserName`, `Email`, `PasswordHash`, `RoleID`, `CreatedAt`, `UpdatedAt`) VALUES
-('admin1', 'admin1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 1, NOW(), NOW()),
-('storeOwner1', 'owner1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 2, NOW(), NOW()),
-('customer1', 'customer1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 3, NOW(), NOW());
+INSERT INTO `User` (`UserName`, `Email`, `PasswordHash`, `RoleID`, `CreatedAt`, `UpdatedAt`, `StoreID`) VALUES
+('admin1', 'admin1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 1, NOW(), NOW(), NULL),
+('storeOwner1', 'owner1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 2, NOW(), NOW(), 1),
+('customer1', 'customer1@mail.com', '$2b$12$KIXbVfP1z/9rGZ.b.L7MueqU0uV.gK0h5O7fIu.Wv7h0.G.C7.z8.', 3, NOW(), NOW(), NULL);
 
 -- -----------------------------------------------------
 -- 3. Insert Store Categories
@@ -48,8 +48,8 @@ INSERT INTO `StoreCategory` (`StoreCategoryName`) VALUES
 -- -----------------------------------------------------
 -- 4. Insert Mall
 -- -----------------------------------------------------
-INSERT INTO `Mall` (`MallName`, `Location`, `StoreCount`, `IsPopular`) VALUES 
-('Central Mall', 'Bangkok', 3, 1);
+INSERT INTO `Mall` (`MallName`, `Location`, `IsPopular`ม`MallImageURL`) VALUES 
+('Central Mall', 'Bangkok', 1, NULL);
 
 -- -----------------------------------------------------
 -- 5. Insert Floor
