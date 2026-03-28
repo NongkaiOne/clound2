@@ -1,19 +1,54 @@
-import { createContext, useContext, useState } from 'react'
-import { mockStores, mockAreas } from '../data/mockData'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { storeAPI } from '../services/api'
 
 const StoreContext = createContext()
 
-export function StoreProvider({ children }) {
-    const [stores, setStores] = useState(mockStores)
-    const [areas, setAreas] = useState(mockAreas)
+const normalizeStore = (item) => ({
+  id: item.id,
+  name: item.name,
+  category: item.category?.name || item.category_name || '-',
+  floor: item.floor,
+  icon: item.category?.icon || '🏬',
+  logo: item.logo,
+  phone: item.phone,
+  posX: item.position?.x ?? 0,
+  posY: item.position?.y ?? 0,
+  description: item.description,
+  openingHours: item.opening_hours,
+  price: item.price,
+  stock: item.stock,
+  status: item.status,
+  position: item.position,
+})
 
-    return (
-        <StoreContext.Provider value={{ stores, setStores, areas, setAreas }}>
-            {children}
-        </StoreContext.Provider>
-    )
+export const StoreProvider = ({ children }) => {
+  const [stores, setStores] = useState([])
+  const [areas, setAreas] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchStores = async () => {
+    setLoading(true)
+    try {
+      const response = await storeAPI.getAll()
+      if (response.data.success) {
+        setStores((response.data.data || []).map(normalizeStore))
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStores()
+  }, [])
+
+  return (
+    <StoreContext.Provider value={{ stores, setStores, areas, setAreas, loading, refreshStores: fetchStores }}>
+      {children}
+    </StoreContext.Provider>
+  )
 }
 
-export function useStores() {
-    return useContext(StoreContext)
-}
+export const useStores = () => useContext(StoreContext)
