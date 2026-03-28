@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-<<<<<<< HEAD
+
 import psycopg2.extras
-=======
+
 
 import bcrypt
 import jwt
@@ -120,14 +120,14 @@ def token_required(allowed_roles=None):
 
                 return f(data, *args, **kwargs)
 
-=======
+
                 decoded = jwt.decode(
                     token,
                     current_app.config["SECRET_KEY"],
                     algorithms=["HS256"],
                 )
                 decoded["role"] = normalize_role(decoded.get("role"))
->>>>>>> origin/backend
+
             except jwt.ExpiredSignatureError:
                 return fail("Token has expired", 401)
             except jwt.InvalidTokenError:
@@ -142,20 +142,20 @@ def token_required(allowed_roles=None):
 
     return decorator
 
-<<<<<<< HEAD
+
 # ==========================================
 # 2. Register
 # ==========================================
 @auth_bp.route('/register', methods=['POST'])
-=======
+
 
 @auth_bp.route("/register", methods=["POST"])
->>>>>>> origin/backend
+
 def register_user():
     conn = None
     cursor = None
     try:
-<<<<<<< HEAD
+
         data = request.get_json()
         if not data or not data.get('username') or not data.get('password') or not data.get('email'):
             return jsonify({"status": "error", "message": "Username, Email, and Password are required"}), 400
@@ -171,7 +171,7 @@ def register_user():
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cursor.execute('SELECT id FROM "User" WHERE username = %s OR email = %s', (username, email))
-=======
+
         data = request.get_json(silent=True) or {}
         username = (data.get("username") or "").strip()
         email = (data.get("email") or "").strip().lower()
@@ -187,12 +187,12 @@ def register_user():
             "SELECT UserID FROM `User` WHERE UserName = %s OR Email = %s LIMIT 1",
             (username, email),
         )
->>>>>>> origin/backend
+
         if cursor.fetchone():
             return fail("Username or email already exists", 409)
 
         cursor.execute(
-<<<<<<< HEAD
+
             'INSERT INTO "User" (username, email, password_hash, role_id) VALUES (%s, %s, %s, %s)',
             (username, email, hashed_password.decode('utf-8'), role_id)
         )
@@ -201,7 +201,7 @@ def register_user():
         log.info(f"New user registered: {username}")
         return jsonify({"success": True, "message": "User registered successfully as Customer"}), 201
 
-=======
+
             "SELECT RoleID FROM Role WHERE LOWER(RoleName) IN ('customer', 'user') ORDER BY RoleID LIMIT 1"
         )
         role_row = cursor.fetchone()
@@ -216,7 +216,7 @@ def register_user():
         conn.commit()
         log.info("Registered user %s", email)
         return ok(message="User registered successfully", status=201)
->>>>>>> origin/backend
+
     except Exception as e:
         log.error("ERROR REGISTER USER: %s", e)
         return fail("An internal server error occurred", 500)
@@ -226,34 +226,33 @@ def register_user():
         if conn:
             conn.close()
 
-<<<<<<< HEAD
 # ==========================================
 # 3. Login
 # ==========================================
 @auth_bp.route('/login', methods=['POST'])
-=======
+
 
 @auth_bp.route("/login", methods=["POST"])
->>>>>>> origin/backend
+
 def login():
     conn = None
     cursor = None
     try:
-<<<<<<< HEAD
+
         data = request.get_json()
         if not data or not data.get('email') or not data.get('password'):
             return jsonify({"status": "error", "message": "Missing email or password"}), 400
-=======
+
         data = request.get_json(silent=True) or {}
         email = (data.get("email") or "").strip().lower()
         password = data.get("password") or ""
->>>>>>> origin/backend
+
 
         if not email or not password:
             return fail("Email and password are required", 400)
 
         conn = get_connection()
-<<<<<<< HEAD
+
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         sql = """
@@ -295,7 +294,7 @@ def login():
         else:
             log.warning(f"Login failed for: {email}")
             return jsonify({"success": False, "message": "Invalid email or password"}), 401
-=======
+
         cursor = conn.cursor(dictionary=True)
         user = fetch_user_by_email(cursor, email)
 
@@ -309,7 +308,7 @@ def login():
         }
         if user.get("store_id"):
             payload["store_id"] = user["store_id"]
->>>>>>> origin/backend
+
 
         token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
         return ok(build_user_payload(user), message="Login successful", token=token)
@@ -322,13 +321,13 @@ def login():
         if conn:
             conn.close()
 
-<<<<<<< HEAD
+
 # ==========================================
 # 4. Profile
 # ==========================================
 @auth_bp.route('/profile', methods=['GET'])
 @token_required(allowed_roles=['Admin', 'StoreOwner', 'Customer'])
-=======
+
 
 @auth_bp.route("/profile", methods=["GET"])
 @token_required(["Admin", "StoreOwner", "Customer"])
@@ -338,7 +337,7 @@ def get_profile(current_user):
     cursor = None
     try:
         conn = get_connection()
-<<<<<<< HEAD
+
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         sql = """
@@ -355,13 +354,12 @@ def get_profile(current_user):
 
         return jsonify({"success": True, "user": dict(user)})
 
-=======
         cursor = conn.cursor(dictionary=True)
         user = fetch_user_by_id(cursor, current_user["user_id"])
         if not user:
             return fail("User not found", 404)
         return ok(build_user_payload(user), user=build_user_payload(user))
->>>>>>> origin/backend
+
     except Exception as e:
         log.error("ERROR PROFILE: %s", e)
         return fail("An internal server error occurred", 500)
