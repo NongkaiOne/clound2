@@ -52,6 +52,91 @@ def format_store(s):
 # ROUTES
 # =========================
 
+# 📋 ดึงร้านค้าทั้งหมด (สำหรับ Admin)
+@store_bp.route('/', methods=['GET'])
+def get_all_stores():
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    # Query ข้อมูลจากตาราง Store โดยตรงตามโครงสร้างใน sampleData.sql
+    sql = "SELECT * FROM Store ORDER BY StoreID DESC"
+    cursor.execute(sql)
+    stores = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify({
+        "success": True,
+        "data": stores
+    })
+
+# ➕ เพิ่มร้านค้าใหม่ (สำหรับ Admin)
+@store_bp.route('/', methods=['POST'])
+def create_store():
+    data = request.json
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        sql = """
+            INSERT INTO Store (
+                UserID, StoreName, StoreCategoryName, StoreCategoryID, 
+                Description, Phone, OpeningHours, LogoURL, 
+                MallID, FloorName, FloorID, PosX, PosY
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        values = (
+            data.get('UserID'), data.get('StoreName'), data.get('StoreCategoryName'),
+            data.get('StoreCategoryID'), data.get('Description'), data.get('Phone'),
+            data.get('OpeningHours'), data.get('LogoURL'), data.get('MallID'),
+            data.get('FloorName'), data.get('FloorID'), data.get('PosX'), data.get('PosY')
+        )
+        cursor.execute(sql, values)
+        conn.commit()
+        return jsonify({"success": True, "message": "Store created successfully"}), 201
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 📝 แก้ไขข้อมูลร้านค้า (สำหรับ Admin)
+@store_bp.route('/<int:store_id>', methods=['PUT'])
+def update_store(store_id):
+    data = request.json
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        sql = """
+            UPDATE Store SET 
+                StoreName=%s, StoreCategoryName=%s, StoreCategoryID=%s, 
+                Description=%s, Phone=%s, OpeningHours=%s, LogoURL=%s, 
+                FloorName=%s, PosX=%s, PosY=%s
+            WHERE StoreID=%s
+        """
+        values = (
+            data.get('StoreName'), data.get('StoreCategoryName'), data.get('StoreCategoryID'),
+            data.get('Description'), data.get('Phone'), data.get('OpeningHours'), 
+            data.get('LogoURL'), data.get('FloorName'), data.get('PosX'), 
+            data.get('PosY'), store_id
+        )
+        cursor.execute(sql, values)
+        conn.commit()
+        return jsonify({"success": True, "message": "Store updated successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 🗑️ ลบร้านค้า (สำหรับ Admin)
+@store_bp.route('/<int:store_id>', methods=['DELETE'])
+def delete_store(store_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Store WHERE StoreID = %s", (store_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"success": True, "message": "Store deleted successfully"})
+
 # 🏬 ดึงร้านค้าทั้งหมดใน Mall
 @store_bp.route('/mall/<int:mall_id>', methods=['GET'])
 def get_stores_by_mall(mall_id):
