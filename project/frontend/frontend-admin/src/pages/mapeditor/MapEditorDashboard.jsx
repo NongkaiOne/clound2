@@ -61,6 +61,20 @@ export default function MapEditorDashboard() {
     const strokes = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
     const colors = ['rgba(99,102,241,0.15)', 'rgba(16,185,129,0.15)', 'rgba(245,158,11,0.15)', 'rgba(239,68,68,0.15)', 'rgba(59,130,246,0.15)']
 
+    // ✅ sync ref ทันทีตอน zoom เปลี่ยน (ไม่รอ useEffect)
+    const setZoomSync = (updater) => {
+        setZoom(prev => {
+            const next = typeof updater === 'function' ? updater(prev) : updater
+            zoomRef.current = next
+            return next
+        })
+    }
+
+    const setPanSync = (newPan) => {
+        panStateRef.current = newPan
+        setPan(newPan)
+    }
+
     useEffect(() => { zoomRef.current = zoom }, [zoom])
     useEffect(() => { panStateRef.current = pan }, [pan])
 
@@ -139,6 +153,7 @@ export default function MapEditorDashboard() {
         y: points.reduce((s, p) => s + p.y, 0) / points.length,
     })
 
+    // ✅ ใช้ ref แทน state เพื่อกัน stale closure ตอน draw area
     const toScreenPos = (xPct, yPct) => {
         const el = mapRef.current
         if (!el) return { x: 0, y: 0 }
@@ -148,9 +163,11 @@ export default function MapEditorDashboard() {
         const imgCenterY = containerH / 2
         const rawX = (xPct / 100) * containerW
         const rawY = (yPct / 100) * containerH
+        const z = zoomRef.current
+        const p = panStateRef.current
         return {
-            x: imgCenterX + (rawX - imgCenterX) * zoom + pan.x,
-            y: imgCenterY + (rawY - imgCenterY) * zoom + pan.y,
+            x: imgCenterX + (rawX - imgCenterX) * z + p.x,
+            y: imgCenterY + (rawY - imgCenterY) * z + p.y,
         }
     }
 
@@ -161,8 +178,10 @@ export default function MapEditorDashboard() {
         const containerH = el.offsetHeight
         const imgCenterX = containerW / 2
         const imgCenterY = containerH / 2
-        const realX = (clickX - pan.x - imgCenterX) / zoom + imgCenterX
-        const realY = (clickY - pan.y - imgCenterY) / zoom + imgCenterY
+        const z = zoomRef.current
+        const p = panStateRef.current
+        const realX = (clickX - p.x - imgCenterX) / z + imgCenterX
+        const realY = (clickY - p.y - imgCenterY) / z + imgCenterY
         return {
             x: (realX / containerW) * 100,
             y: (realY / containerH) * 100,
@@ -265,9 +284,8 @@ export default function MapEditorDashboard() {
                                 key={floor.id}
                                 onClick={() => {
                                     setCurrentFloor(floor.id)
-                                    setPan({ x: 0, y: 0 })
+                                    setPanSync({ x: 0, y: 0 })
                                     panRef.current = { x: 0, y: 0 }
-                                    panStateRef.current = { x: 0, y: 0 }
                                 }}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                                     currentFloor === floor.id
@@ -296,7 +314,8 @@ export default function MapEditorDashboard() {
                         if (!drawingMode) return
                         const rect = e.currentTarget.getBoundingClientRect()
                         const pos = toImagePct(e.clientX - rect.left, e.clientY - rect.top)
-                        setCurrentPoints([...currentPoints, pos])
+                        // ✅ functional update กัน stale closure ของ currentPoints
+                        setCurrentPoints(prev => [...prev, pos])
                     }}
                 >
                     <div className="absolute top-3 left-3 bg-white text-xs text-gray-500 px-2 py-1 rounded shadow-sm z-10">
@@ -310,9 +329,9 @@ export default function MapEditorDashboard() {
                     )}
 
                     <div className="absolute top-3 right-3 flex flex-col gap-1 z-10">
-                        <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 3)) }}
+                        <button onClick={(e) => { e.stopPropagation(); setZoomSync(z => Math.min(z + 0.25, 3)) }}
                             className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600">+</button>
-                        <button onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.25, 0.5)) }}
+                        <button onClick={(e) => { e.stopPropagation(); setZoomSync(z => Math.max(z - 0.25, 0.5)) }}
                             className="bg-white shadow rounded p-1 hover:bg-gray-50 w-8 h-8 flex items-center justify-center text-gray-600">−</button>
                     </div>
 
@@ -511,6 +530,23 @@ export default function MapEditorDashboard() {
                                 onClick={() => {
                                     if (!newStore.name || !newStore.category || !newStore.email || !newStore.password) return
                                     if (newStore.password !== newStore.confirmPassword) return
+                                    // ✅ Optimistic update - add ทันที ไม่รอ backend
+                                    const tempId = Date.now()
+                                    const optimisticStore = {
+                                        id: tempId,
+                                        name: newStore.name,
+                                        floor: newStore.floor,
+                                        category: newStore.category,
+                                        icon: '🏪',
+                                        logo: newStore.logo ?? null,
+                                        description: newStore.description ?? '',
+                                        position: null,
+                                    }
+                                    setStores(prev => [...prev, optimisticStore])
+                                    setNewStore({ name: '', category: '', floor: 'G', description: '', logo: null, email: '', password: '', confirmPassword: '' })
+                                    setShowAddStore(false)
+
+                                    // sync กับ backend แล้วแทนที่ด้วย id จริง
                                     fetch('http://localhost:5000/api/stores', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
@@ -518,11 +554,19 @@ export default function MapEditorDashboard() {
                                     })
                                     .then(res => res.json())
                                     .then(data => {
-                                        setStores([...stores, data])
+                                        const item = data.data ?? data
+                                        setStores(prev => prev.map(s => s.id === tempId ? {
+                                            id: item.id ?? tempId,
+                                            name: item.name ?? optimisticStore.name,
+                                            floor: item.floor ?? optimisticStore.floor,
+                                            category: item.category?.name ?? item.category ?? optimisticStore.category,
+                                            icon: item.category?.icon ?? '🏪',
+                                            logo: item.logo ?? optimisticStore.logo,
+                                            description: item.description ?? optimisticStore.description,
+                                            position: item.position ?? null,
+                                        } : s))
                                     })
                                     .catch(err => console.error('Add store error:', err))
-                                    setNewStore({ name: '', category: '', floor: 'G', description: '', logo: null, email: '', password: '', confirmPassword: '' })
-                                    setShowAddStore(false)
                                 }}
                                 className="px-6 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm rounded-lg font-medium"
                             >
